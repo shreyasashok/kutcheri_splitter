@@ -1,6 +1,7 @@
 from tkinter import Tk, Label, Button, StringVar
 from telnetlib import Telnet
 import time
+from autocomplete_entry import AutocompleteEntry
 
 class MyFirstGUI:
     def __init__(self, master):
@@ -20,6 +21,10 @@ class MyFirstGUI:
 
         self.close_button = Button(master, text="Close", command=master.quit)
         self.close_button.pack()
+
+        auto_list = ['test', 'alphabet', 'elephant']
+        self.entry = AutocompleteEntry(auto_list)
+        self.entry.pack()
 
     def greet(self):
         print("Greetings!")

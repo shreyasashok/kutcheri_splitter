@@ -175,6 +175,8 @@ class KutcheriSplitterGUI:
         self.day_combobox.state(['readonly'])
         self.day_combobox.grid(row=0, column=4, pady=(5,1), padx=5)
 
+        self.generate_button = Button(self.kutcheri_details, text="Generate")
+        self.generate_button.grid(row=25, column=0, padx=5, pady=15, columnspan=7)
         
 
         self.track_details = Frame(master, relief=GROOVE)
@@ -196,11 +198,15 @@ class KutcheriSplitterGUI:
         self.forward_10.grid(row=0, column=6, padx=3, pady=3)
 
         self.start_split = Button(self.track_details, text="Start Split")
-        self.start_split.grid(row=1, column=2, padx=3, pady=3)
+        self.start_split.grid(row=1, column=0, padx=3, pady=3)
         self.end_split = Button(self.track_details, text="End Split")
-        self.end_split.grid(row=1, column=3, padx=3, pady=3)
+        self.end_split.grid(row=1, column=1, padx=3, pady=3)
         self.end_start_split = Button(self.track_details, text="End/Start Split")
-        self.end_start_split.grid(row=1, column=4, padx=3, pady=3)
+        self.end_start_split.grid(row=1, column=2, padx=3, pady=3)
+        self.new_track = Button(self.track_details, text="New Track")
+        self.new_track.grid(row=1, column=3, padx=3, pady=3)
+        self.delete_last_track = Button(self.track_details, text="Delete Last Track")
+        self.delete_last_track.grid(row=1, column=4, padx=3, pady=3)
 
         self.track_list = Frame(self.track_details)
         self.track_list.grid(row=2, column=0, columnspan=7, pady=(15,0), padx=2)

@@ -65,7 +65,7 @@ class KutcheriSplitterGUI:
         self.kutcheri_details.grid_columnconfigure(0, weight=1)
 
         self.status_label_text = StringVar()
-        self.status_label_text.set("Status: Status goes here")
+        self.set_status("Connecting to VLC...")
         self.status_label = Label(self.kutcheri_details,
                                   textvariable=self.status_label_text,
                                   font=(None,13))
@@ -182,19 +182,19 @@ class KutcheriSplitterGUI:
         self.track_details = Frame(master, relief=GROOVE)
         self.track_details.pack(side=LEFT, padx=(20,5), pady=5, fill=BOTH)
 
-        self.back_10 = Button(self.track_details, text="<10s")
+        self.back_10 = Button(self.track_details, text="<10s", command=lambda: self.seek(-10))
         self.back_10.grid(row=0, column=0, padx=3, pady=3)
-        self.back_5 = Button(self.track_details, text="<5s")
+        self.back_5 = Button(self.track_details, text="<5s", command=lambda: self.seek(-5))
         self.back_5.grid(row=0, column=1, padx=3, pady=3)
-        self.back_1 = Button(self.track_details, text="<1s")
+        self.back_1 = Button(self.track_details, text="<1s", command=lambda: self.seek(-1))
         self.back_1.grid(row=0,column=2, padx=3, pady=3)
-        self.pause = Button(self.track_details, text="Pause/Play")
+        self.pause = Button(self.track_details, text="Pause/Play", command=self.pause)
         self.pause.grid(row=0, column=3, padx=3, pady=3)
-        self.forward_1 = Button(self.track_details, text="1s>")
+        self.forward_1 = Button(self.track_details, text="1s>", command=lambda: self.seek(1))
         self.forward_1.grid(row=0, column=4, padx=3, pady=3)
-        self.forward_5 = Button(self.track_details, text="5s>")
+        self.forward_5 = Button(self.track_details, text="5s>", command=lambda: self.seek(5))
         self.forward_5.grid(row=0, column=5, padx=3, pady=3)
-        self.forward_10 = Button(self.track_details, text="10s>")
+        self.forward_10 = Button(self.track_details, text="10s>", command=lambda: self.seek(10))
         self.forward_10.grid(row=0, column=6, padx=3, pady=3)
 
         self.start_split = Button(self.track_details, text="Start Split")
@@ -203,9 +203,9 @@ class KutcheriSplitterGUI:
         self.end_split.grid(row=1, column=1, padx=3, pady=3)
         self.end_start_split = Button(self.track_details, text="End/Start Split")
         self.end_start_split.grid(row=1, column=2, padx=3, pady=3)
-        self.new_track = Button(self.track_details, text="New Track")
+        self.new_track = Button(self.track_details, text="New Track", command=self.add_track)
         self.new_track.grid(row=1, column=3, padx=3, pady=3)
-        self.delete_last_track = Button(self.track_details, text="Delete Last Track")
+        self.delete_last_track = Button(self.track_details, text="Delete Last Track", command=self.delete_last_track)
         self.delete_last_track.grid(row=1, column=4, padx=3, pady=3)
 
         self.track_list = Frame(self.track_details)
@@ -238,34 +238,84 @@ class KutcheriSplitterGUI:
 
         #self.filedialog = filedialog.asksaveasfilename(initialdir = "/", title = "Select file")
         self.tracks = []
-        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
-        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
-        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
-        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
-        
+        self.tracks.append(Track(self.track_list, len(self.tracks)+1))        
 
-    def greet(self):
-        print("Greetings!")
+    def add_track(self):
+        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
+
+    def delete_last_track(self):
+        if (len(self.tracks) > 1):
+            self.tracks[-1].destroy()
+            self.tracks.pop()
 
     def pause(self):
-        print("attempting to pause")
-        t = Telnet('localhost',4212)
+        print("Attempting to pause")
+        t = Telnet('localhost', 4212)
         t.write('pause\n'.encode('ascii'))
         t.close();
 
-    def update(self):
-        print("attempting to update")
-##        current_time = time.strftime('%H:%M:%S', time.gmtime(self.get_current_time()))
-##        self.labeltext.set("Current time: "+current_time)
-##        self.master.after(200, self.update)
-    def get_current_time(self):
+    def seek(self, seek_amount):
+        print("Attempting to seek")
+        current_time_raw = self.get_current_time()
+        if (current_time_raw == -1):
+            print("VLC connection problem, can't seek")
+        else:
+            new_time = current_time_raw+seek_amount
+            t = Telnet('localhost', 4212)
+            command ='seek '+str(new_time)+'\n'
+            t.write(command.encode('ascii'))
+            t.close()
+            new_time_raw = self.get_current_time()
+            if (new_time_raw == current_time_raw): #this means that we were paused, so we need to unpause, seek, then pause again
+                print('Quick unpause to seek')
+                t = Telnet('localhost', 4212)
+                command ='pause\nseek '+str(new_time)+'\npause'
+                t.write(command.encode('ascii'))
+                t.read_very_eager()
+                time.sleep(0.1)
+                t.close()
+                
 
-        t = Telnet('localhost', 4212)
-        t.read_very_eager() #clear the buffer
-        t.write('get_time\n'.encode('ascii'))
-        time.sleep(0.1)
-        current_time = int(t.read_very_eager().decode('unicode_escape'))
-        return current_time
+    def update(self):
+        print("Update")
+        current_time_raw = self.get_current_time()
+        if (current_time_raw == -1):
+            self.set_status("Error connecting to VLC")
+        else:
+            current_time = time.strftime('%H:%M:%S', time.gmtime(current_time_raw))
+            self.set_status("Current time: "+current_time+" ("+str(current_time_raw)+"s)")
+        self.master.after(450, self.update)
+
+    def set_status(self, status):
+        self.status_label_text.set(status)
+    
+    def get_current_time(self):
+    
+        try:
+            t = Telnet('localhost', 4212)
+            t.read_very_eager() #clear the buffer
+            t.write('get_time\n'.encode('ascii'))
+            time.sleep(0.1)
+            message = t.read_very_eager().decode('unicode_escape')
+            t.close()
+
+            messages = message.splitlines()
+            for current_message in messages:
+                if (current_message.isdigit()):
+                    current_time = int(current_message)
+                    return current_time
+            print("No messages matched spec")
+            return -1
+        except ConnectionRefusedError:
+            print("ConnectionRefusedError")
+            return -1
+        except ValueError:
+            print("ValueError")
+            print(message)
+            return -1
+        except ConnectionResetError:
+            print("ConnectionResetError")
+            return -1
 
 
 #with open('RagamDatabase/ragam_list.csv', newline='') as csvfile:
@@ -277,4 +327,5 @@ root = Tk()
 my_gui = KutcheriSplitterGUI(root)
 root.after(1000,my_gui.update)
 root.mainloop()
-root.destroy()
+
+    

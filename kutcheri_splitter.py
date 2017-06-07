@@ -175,6 +175,8 @@ class KutcheriSplitterGUI:
         self.day_combobox.state(['readonly'])
         self.day_combobox.grid(row=0, column=4, pady=(5,1), padx=5)
 
+        
+
         self.track_details = Frame(master, relief=GROOVE)
         self.track_details.pack(side=LEFT, padx=(20,5), pady=5, fill=BOTH)
 
@@ -193,8 +195,15 @@ class KutcheriSplitterGUI:
         self.forward_10 = Button(self.track_details, text="10s>")
         self.forward_10.grid(row=0, column=6, padx=3, pady=3)
 
+        self.start_split = Button(self.track_details, text="Start Split")
+        self.start_split.grid(row=1, column=2, padx=3, pady=3)
+        self.end_split = Button(self.track_details, text="End Split")
+        self.end_split.grid(row=1, column=3, padx=3, pady=3)
+        self.end_start_split = Button(self.track_details, text="End/Start Split")
+        self.end_start_split.grid(row=1, column=4, padx=3, pady=3)
+
         self.track_list = Frame(self.track_details)
-        self.track_list.grid(row=1, column=0, columnspan=7, pady=(15,0), padx=2)
+        self.track_list.grid(row=2, column=0, columnspan=7, pady=(15,0), padx=2)
 
         self.track_no_label = Label(self.track_list, text="Track No.")
         self.track_no_label.grid(row=0, column=0, padx=(5,0))
@@ -222,8 +231,11 @@ class KutcheriSplitterGUI:
         self.track_comments_label.grid(row=0, column=11)
 
         #self.filedialog = filedialog.asksaveasfilename(initialdir = "/", title = "Select file")
-        self.t1 = Track(self.track_list, 1)
-        self.t2 = Track(self.track_list, 2)
+        self.tracks = []
+        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
+        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
+        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
+        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
         
 
     def greet(self):

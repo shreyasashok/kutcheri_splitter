@@ -5,6 +5,53 @@ import time
 from tkentrycomplete import AutocompleteEntry
 import csv
 
+class Track:
+    def __init__(self, master, track_number):
+        self.master = master
+        self.track_number = track_number
+
+        self.track_no = Label(self.master, text=track_number)
+        self.track_no.grid(row=track_number, column=0, padx=5, pady=3)
+        self.track_start = Entry(self.master, width=6)
+        self.track_start.grid(row=track_number, column=1, padx=5, pady=3)
+        self.track_end = Entry(self.master, width=6)
+        self.track_end.grid(row=track_number, column=2, padx=5, pady=3)
+        self.track_title = AutocompleteEntry(self.master, width=25)
+        self.track_title.grid(row=track_number, column=3, padx=5, pady=3)
+        self.track_type = AutocompleteEntry(self.master, width=8)
+        self.track_type.grid(row=track_number, column=4, padx=5, pady=3)
+        self.track_ragam = AutocompleteEntry(self.master, width=10)
+        self.track_ragam.grid(row=track_number, column=5, padx=5, pady=3)
+        self.track_talam = AutocompleteEntry(self.master, width=10)
+        self.track_talam.grid(row=track_number, column=6, padx=5, pady=3)
+        self.track_composer = AutocompleteEntry(self.master, width=13)
+        self.track_composer.grid(row=track_number, column=7, padx=5, pady=3)
+        self.alapana_var = IntVar()
+        self.niraval_var = IntVar()
+        self.swaram_var = IntVar()
+        self.track_alapana = Checkbutton(self.master, variable=self.alapana_var)
+        self.track_alapana.grid(row=track_number, column=8, padx=5, pady=3)
+        self.track_niraval = Checkbutton(self.master, variable=self.niraval_var)
+        self.track_niraval.grid(row=track_number, column=9, padx=5, pady=3)
+        self.track_swaram = Checkbutton(self.master, variable=self.swaram_var)
+        self.track_swaram.grid(row=track_number, column=10, padx=5, pady=3)
+        self.track_comments = Entry(self.master, width=25)
+        self.track_comments.grid(row=track_number, column=11, padx=5, pady=3)
+    
+    def destroy(self):
+        self.track_no.destroy()
+        self.track_start.destroy()
+        self.track_end.destroy()
+        self.track_title.destroy()
+        self.track_type.destroy()
+        self.track_ragam.destroy()
+        self.track_talam.destroy()
+        self.track_composer.destroy()
+        self.track_alapana.destroy()
+        self.track_niraval.destroy()
+        self.track_swaram.destroy()
+        self.track_comments.destroy()
+
 class KutcheriSplitterGUI:
     def __init__(self, master):
 
@@ -81,23 +128,31 @@ class KutcheriSplitterGUI:
         self.other_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
         self.other_artist_entry.grid(row=16, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
+        self.audio_quality_label = Label(self.kutcheri_details, text="Audio Quality")
+        self.audio_quality_label.grid(row=17, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+
+        self.audio_quality_combobox = Combobox(self.kutcheri_details)
+        self.audio_quality_combobox['values'] = ('good', 'average', 'potato') #temporary
+        self.audio_quality_combobox.state(['readonly'])
+        self.audio_quality_combobox.grid(row=18, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+
         self.sabha_label = Label(self.kutcheri_details, text="Sabha Name")
-        self.sabha_label.grid(row=17, column=0, sticky=W, pady=(25,1), padx=5, columnspan=5)
+        self.sabha_label.grid(row=19, column=0, sticky=W, pady=(25,1), padx=5, columnspan=5)
 
         self.sabha_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
-        self.sabha_entry.grid(row=18, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.sabha_entry.grid(row=20, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.location_label = Label(self.kutcheri_details, text="Location (City if in India, City, State if in US)")
-        self.location_label.grid(row=19, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.location_label.grid(row=21, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.location_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
-        self.location_entry.grid(row=20, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.location_entry.grid(row=22, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.date_label = Label(self.kutcheri_details, text="Date (YYYY-MM-DD)")
-        self.date_label.grid(row=21, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.date_label.grid(row=23, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.date_frame = Frame(self.kutcheri_details)
-        self.date_frame.grid(row=22, column=0, sticky=W, pady=(0,5))
+        self.date_frame.grid(row=24, column=0, sticky=W, pady=(0,5), padx=2)
         
         self.year_combobox = Combobox(self.date_frame, width=20)
         self.year_combobox['values'] = ('2015', '2016', '2017') #temporary
@@ -139,7 +194,7 @@ class KutcheriSplitterGUI:
         self.forward_10.grid(row=0, column=6, padx=3, pady=3)
 
         self.track_list = Frame(self.track_details)
-        self.track_list.grid(row=1, column=0, columnspan=7, pady=(15,0))
+        self.track_list.grid(row=1, column=0, columnspan=7, pady=(15,0), padx=2)
 
         self.track_no_label = Label(self.track_list, text="Track No.")
         self.track_no_label.grid(row=0, column=0, padx=(5,0))
@@ -166,62 +221,10 @@ class KutcheriSplitterGUI:
         self.track_comments_label = Label(self.track_list, text="Comments")
         self.track_comments_label.grid(row=0, column=11)
 
-        self.track_no_1 = Label(self.track_list, text="1")
-        self.track_no_1.grid(row=1, column=0, padx=5, pady=3)
-        self.track_start_1 = Entry(self.track_list, width=6)
-        self.track_start_1.grid(row=1, column=1, padx=5, pady=3)
-        self.track_end_1 = Entry(self.track_list, width=6)
-        self.track_end_1.grid(row=1, column=2, padx=5, pady=3)
-        self.track_title_1 = AutocompleteEntry(self.track_list, width=25)
-        self.track_title_1.grid(row=1, column=3, padx=5, pady=3)
-        self.track_type_1 = AutocompleteEntry(self.track_list, width=8)
-        self.track_type_1.grid(row=1, column=4, padx=5, pady=3)
-        self.track_ragam_1 = AutocompleteEntry(self.track_list, width=10)
-        self.track_ragam_1.grid(row=1, column=5, padx=5, pady=3)
-        self.track_talam_1 = AutocompleteEntry(self.track_list, width=10)
-        self.track_talam_1.grid(row=1, column=6, padx=5, pady=3)
-        self.track_composer_1 = AutocompleteEntry(self.track_list, width=13)
-        self.track_composer_1.grid(row=1, column=7, padx=5, pady=3)
-        self.var1=IntVar()
-        self.var2=IntVar()
-        self.var3=IntVar()
-        self.track_alapana_1 = Checkbutton(self.track_list, variable=self.var1)
-        self.track_alapana_1.grid(row=1, column=8, padx=5, pady=3)
-        self.track_niraval_1 = Checkbutton(self.track_list, variable=self.var2)
-        self.track_niraval_1.grid(row=1, column=9, padx=5, pady=3)
-        self.track_swaram_1 = Checkbutton(self.track_list, variable=self.var3)
-        self.track_swaram_1.grid(row=1, column=10, padx=5, pady=3)
-        self.track_comments_1 = Entry(self.track_list, width=25)
-        self.track_comments_1.grid(row=1, column=11, padx=5, pady=3)
-
-        self.track_no_2 = Label(self.track_list, text="2")
-        self.track_no_2.grid(row=2, column=0, padx=5, pady=3)
-        self.track_start_2 = Entry(self.track_list, width=6)
-        self.track_start_2.grid(row=2, column=1, padx=5, pady=3)
-        self.track_end_2 = Entry(self.track_list, width=6)
-        self.track_end_2.grid(row=2, column=2, padx=5, pady=3)
-        self.track_title_2 = AutocompleteEntry(self.track_list, width=25)
-        self.track_title_2.grid(row=2, column=3, padx=5, pady=3)
-        self.track_type_2 = AutocompleteEntry(self.track_list, width=8)
-        self.track_type_2.grid(row=2, column=4, padx=5, pady=3)
-        self.track_ragam_2 = AutocompleteEntry(self.track_list, width=10)
-        self.track_ragam_2.grid(row=2, column=5, padx=5, pady=3)
-        self.track_talam_2 = AutocompleteEntry(self.track_list, width=10)
-        self.track_talam_2.grid(row=2, column=6, padx=5, pady=3)
-        self.track_composer_2 = AutocompleteEntry(self.track_list, width=13)
-        self.track_composer_2.grid(row=2, column=7, padx=5, pady=3)
-        self.var4=IntVar()
-        self.var5=IntVar()
-        self.var6=IntVar()
-        self.track_alapana_2 = Checkbutton(self.track_list, variable=self.var4)
-        self.track_alapana_2.grid(row=2, column=8, padx=5, pady=3)
-        self.track_niraval_2 = Checkbutton(self.track_list, variable=self.var5)
-        self.track_niraval_2.grid(row=2, column=9, padx=5, pady=3)
-        self.track_swaram_2 = Checkbutton(self.track_list, variable=self.var6)
-        self.track_swaram_2.grid(row=2, column=10, padx=5, pady=3)
-        self.track_comments_2 = Entry(self.track_list, width=25)
-        self.track_comments_2.grid(row=2, column=11, padx=5, pady=3)
         #self.filedialog = filedialog.asksaveasfilename(initialdir = "/", title = "Select file")
+        self.t1 = Track(self.track_list, 1)
+        self.t2 = Track(self.track_list, 2)
+        
 
     def greet(self):
         print("Greetings!")
@@ -234,10 +237,9 @@ class KutcheriSplitterGUI:
 
     def update(self):
         print("attempting to update")
-        current_time = time.strftime('%H:%M:%S', time.gmtime(self.get_current_time()))
-        self.labeltext.set("Current time: "+current_time)
-        self.master.after(200, self.update)
-
+##        current_time = time.strftime('%H:%M:%S', time.gmtime(self.get_current_time()))
+##        self.labeltext.set("Current time: "+current_time)
+##        self.master.after(200, self.update)
     def get_current_time(self):
 
         t = Telnet('localhost', 4212)
@@ -255,6 +257,6 @@ class KutcheriSplitterGUI:
     
 root = Tk()
 my_gui = KutcheriSplitterGUI(root)
-#root.after(1000,my_gui.update)
+root.after(1000,my_gui.update)
 root.mainloop()
 root.destroy()

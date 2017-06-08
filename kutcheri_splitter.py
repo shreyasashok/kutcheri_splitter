@@ -186,7 +186,7 @@ class KutcheriSplitterGUI:
         self.audio_quality_label.grid(row=19, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.audio_quality_combobox = Combobox(self.kutcheri_details)
-        self.audio_quality_combobox['values'] = ('good', 'average', 'potato') #temporary
+        self.audio_quality_combobox['values'] = ('good', 'average', 'potato')
         self.audio_quality_combobox.state(['readonly'])
         self.audio_quality_combobox.grid(row=20, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
@@ -209,7 +209,7 @@ class KutcheriSplitterGUI:
         self.date_frame.grid(row=26, column=0, sticky=W, pady=(0,5), padx=2)
         
         self.year_combobox = Combobox(self.date_frame, width=7)
-        self.year_combobox['values'] = ('2015', '2016', '2017') #temporary
+        self.year_combobox['values'] = ('1990', '1991', '1992', '1993', '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025') #temporary
         self.year_combobox.state(['readonly'])
         self.year_combobox.grid(row=0, column=0, pady=(5,1), padx=5)
 
@@ -217,7 +217,7 @@ class KutcheriSplitterGUI:
         self.date_separator_1.grid(row=0, column=1, pady=3)
 
         self.month_combobox = Combobox(self.date_frame, width=3)
-        self.month_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07') #temporary
+        self.month_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31') #temporary
         self.month_combobox.state(['readonly'])
         self.month_combobox.grid(row=0, column=2, pady=(5,1), padx=5)
 

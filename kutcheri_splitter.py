@@ -6,6 +6,7 @@ from tkentrycomplete import AutocompleteEntry, AutocompleteCombobox
 import csv
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import os
 
 class Track:
     def __init__(self, master, autocomplete_dict, track_number):
@@ -155,48 +156,48 @@ class KutcheriSplitterGUI:
         self.kanjira_entry.grid(row=12, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.morsing_label = Label(self.kutcheri_details, text="Morsing")
-        self.morsing_label.grid(row=11, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.morsing_label.grid(row=13, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.morsing_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.morsing_entry.grid(row=12, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.morsing_entry.grid(row=14, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.vocal_support_label = Label(self.kutcheri_details, text="Vocal Support")
-        self.vocal_support_label.grid(row=13, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.vocal_support_label.grid(row=15, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.vocal_support_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.vocal_support_entry.grid(row=14, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.vocal_support_entry.grid(row=16, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.other_artist_label = Label(self.kutcheri_details, text="Other Artist")
-        self.other_artist_label.grid(row=15, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.other_artist_label.grid(row=17, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.other_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.other_artist_entry.grid(row=16, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.other_artist_entry.grid(row=18, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.audio_quality_label = Label(self.kutcheri_details, text="Audio Quality")
-        self.audio_quality_label.grid(row=17, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.audio_quality_label.grid(row=19, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.audio_quality_combobox = Combobox(self.kutcheri_details)
         self.audio_quality_combobox['values'] = ('good', 'average', 'potato') #temporary
         self.audio_quality_combobox.state(['readonly'])
-        self.audio_quality_combobox.grid(row=18, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.audio_quality_combobox.grid(row=20, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.sabha_label = Label(self.kutcheri_details, text="Sabha Name")
-        self.sabha_label.grid(row=19, column=0, sticky=W, pady=(25,1), padx=5, columnspan=5)
+        self.sabha_label.grid(row=21, column=0, sticky=W, pady=(25,1), padx=5, columnspan=5)
 
         self.sabha_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.sabha_entry.grid(row=20, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.sabha_entry.grid(row=22, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.location_label = Label(self.kutcheri_details, text="Location (City if in India, City, State if in US)")
-        self.location_label.grid(row=21, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.location_label.grid(row=23, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.location_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.location_entry.grid(row=22, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.location_entry.grid(row=24, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.date_label = Label(self.kutcheri_details, text="Date (YYYY-MM-DD)")
-        self.date_label.grid(row=23, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.date_label.grid(row=25, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
         self.date_frame = Frame(self.kutcheri_details)
-        self.date_frame.grid(row=24, column=0, sticky=W, pady=(0,5), padx=2)
+        self.date_frame.grid(row=26, column=0, sticky=W, pady=(0,5), padx=2)
         
         self.year_combobox = Combobox(self.date_frame, width=7)
         self.year_combobox['values'] = ('2015', '2016', '2017') #temporary
@@ -219,8 +220,8 @@ class KutcheriSplitterGUI:
         self.day_combobox.state(['readonly'])
         self.day_combobox.grid(row=0, column=4, pady=(5,1), padx=5)
 
-        self.generate_button = Button(self.kutcheri_details, text="Generate")
-        self.generate_button.grid(row=25, column=0, padx=5, pady=15, columnspan=7)
+        self.generate_button = Button(self.kutcheri_details, text="Generate", command=self.generate)
+        self.generate_button.grid(row=27, column=0, padx=5, pady=15, columnspan=7)
         
 
         self.track_details = Frame(master, relief=GROOVE)
@@ -456,6 +457,15 @@ class KutcheriSplitterGUI:
         except ConnectionResetError:
             print("ConnectionResetError")
             return -1
+
+    def generate(self):
+        all_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get()]))
+        print(all_artists_name)
+        main_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get()]))
+        album_title = main_artists_name+' - '+', '.join(filter(None,[self.sabha_entry.get(), self.location_entry.get()]))+' - '+self.year_combobox.get()+'-'+self.month_combobox.get()+'-'+self.day_combobox.get()
+        print(album_title)
+                                                        
+                                                               
 
 def flatten_list(l):
     return [item for sublist in l for item in sublist] 

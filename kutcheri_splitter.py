@@ -87,6 +87,14 @@ class Track:
             self.track_ragam.set(self.autocomplete_dict['krithi'][krithi_name][1])
             self.track_talam.set(self.autocomplete_dict['krithi'][krithi_name][2])
             self.track_composer.set(self.autocomplete_dict['krithi'][krithi_name][3])
+
+    def set_start(self, time):
+        self.track_start.delete(0, END)
+        self.track_start.insert(0,str(time))
+
+    def set_end(self, time):
+        self.track_end.delete(0, END)
+        self.track_end.insert(0, str(time))
             
 class KutcheriSplitterGUI:
     def __init__(self, master):
@@ -234,12 +242,12 @@ class KutcheriSplitterGUI:
         self.forward_10.grid(row=0, column=6, padx=3, pady=3)
 
         self.splitting = False
-        self.start_split = Button(self.track_details, text="Start Split")
+        self.start_split = Button(self.track_details, text="Start Split", command=self.start_split)
         self.start_split.grid(row=1, column=0, padx=3, pady=3)
-        self.end_split = Button(self.track_details, text="End Split")
+        self.end_split = Button(self.track_details, text="End Split", command=self.end_split)
         #self.end_split.config(state='disabled') #deferring button disabling till a later release
         self.end_split.grid(row=1, column=1, padx=3, pady=3)
-        self.end_start_split = Button(self.track_details, text="End/Start Split")
+        self.end_start_split = Button(self.track_details, text="End/Start Split", command=self.end_start_split)
         #self.end_start_split.config(state='disabled') #deferring button disabling till a later release
         self.end_start_split.grid(row=1, column=2, padx=3, pady=3)
         self.new_track = Button(self.track_details, text="New Track", command=self.add_track)
@@ -359,6 +367,20 @@ class KutcheriSplitterGUI:
         if (len(self.tracks) > 1):
             self.tracks[-1].destroy()
             self.tracks.pop() #take it off the stack
+
+    def start_split(self):
+        current_time = self.get_current_time()
+        self.tracks[-1].set_start(current_time)
+
+    def end_split(self):
+        current_time = self.get_current_time()
+        self.tracks[-1].set_end(current_time)
+
+    def end_start_split(self):
+        current_time = self.get_current_time()
+        self.tracks[-1].set_end(current_time)
+        self.add_track()
+        self.tracks[-1].set_start(current_time)
 
     def pause(self):
         print("Attempting to pause")

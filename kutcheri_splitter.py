@@ -2,43 +2,70 @@ from tkinter import *
 from tkinter.ttk import *
 from telnetlib import Telnet
 import time
-from tkentrycomplete import AutocompleteEntry
+from tkentrycomplete import AutocompleteEntry, AutocompleteCombobox
 import csv
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 class Track:
-    def __init__(self, master, track_number):
+    def __init__(self, master, autocomplete_dict, track_number):
         self.master = master
         self.track_number = track_number
 
         self.track_no = Label(self.master, text=track_number)
-        self.track_no.grid(row=track_number, column=0, padx=5, pady=3)
+        self.track_no.grid(row=track_number, column=0, padx=3, pady=3)
+        
         self.track_start = Entry(self.master, width=6)
-        self.track_start.grid(row=track_number, column=1, padx=5, pady=3)
+        self.track_start.grid(row=track_number, column=1, padx=3, pady=3)
+        
         self.track_end = Entry(self.master, width=6)
-        self.track_end.grid(row=track_number, column=2, padx=5, pady=3)
-        self.track_title = AutocompleteEntry(self.master, width=25)
-        self.track_title.grid(row=track_number, column=3, padx=5, pady=3)
-        self.track_type = AutocompleteEntry(self.master, width=8)
-        self.track_type.grid(row=track_number, column=4, padx=5, pady=3)
-        self.track_ragam = AutocompleteEntry(self.master, width=10)
-        self.track_ragam.grid(row=track_number, column=5, padx=5, pady=3)
-        self.track_talam = AutocompleteEntry(self.master, width=10)
-        self.track_talam.grid(row=track_number, column=6, padx=5, pady=3)
-        self.track_composer = AutocompleteEntry(self.master, width=13)
-        self.track_composer.grid(row=track_number, column=7, padx=5, pady=3)
-        self.alapana_var = IntVar()
-        self.niraval_var = IntVar()
-        self.swaram_var = IntVar()
-        self.track_alapana = Checkbutton(self.master, variable=self.alapana_var)
-        self.track_alapana.grid(row=track_number, column=8, padx=5, pady=3)
-        self.track_niraval = Checkbutton(self.master, variable=self.niraval_var)
-        self.track_niraval.grid(row=track_number, column=9, padx=5, pady=3)
-        self.track_swaram = Checkbutton(self.master, variable=self.swaram_var)
-        self.track_swaram.grid(row=track_number, column=10, padx=5, pady=3)
+        self.track_end.grid(row=track_number, column=2, padx=3, pady=3)
+        
+        self.track_title = AutocompleteCombobox(self.master, width=33)
+        self.track_title.bind('<FocusOut>', self.track_select)
+        self.track_title.grid(row=track_number, column=3, padx=3, pady=3)
+        
+        self.track_type = AutocompleteCombobox(self.master, width=10)
+        self.track_type.grid(row=track_number, column=4, padx=3, pady=3)
+        
+        self.track_ragam = AutocompleteCombobox(self.master, width=23)
+        self.track_ragam.grid(row=track_number, column=5, padx=3, pady=3)
+        
+        self.track_talam = AutocompleteCombobox(self.master, width=10)
+        self.track_talam.grid(row=track_number, column=6, padx=3, pady=3)
+        
+        self.track_composer = AutocompleteCombobox(self.master, width=23)
+        self.track_composer.grid(row=track_number, column=7, padx=3, pady=3)
+        
+        self.alapana_var = StringVar()
+        self.niraval_var = StringVar()
+        self.swaram_var = StringVar()
+        self.alapana_var.set('n')
+        self.niraval_var.set('n')
+        self.swaram_var.set('n')
+        
+        self.track_alapana = Checkbutton(self.master, variable=self.alapana_var, onvalue='y', offvalue='n')
+        self.track_alapana.grid(row=track_number, column=8, padx=3, pady=3)
+        
+        self.track_niraval = Checkbutton(self.master, variable=self.niraval_var, onvalue='y', offvalue='n')
+        self.track_niraval.grid(row=track_number, column=9, padx=3, pady=3)
+        
+        self.track_swaram = Checkbutton(self.master, variable=self.swaram_var, onvalue='y', offvalue='n')
+        self.track_swaram.grid(row=track_number, column=10, padx=3, pady=3)
+        
         self.track_comments = Entry(self.master, width=25)
-        self.track_comments.grid(row=track_number, column=11, padx=5, pady=3)
+        self.track_comments.grid(row=track_number, column=11, padx=3, pady=3)
+
+        self.autocomplete_dict = autocomplete_dict
+
+        self.track_type.set_completion_list(self.autocomplete_dict['type'])
+        self.track_ragam.set_completion_list(self.autocomplete_dict['ragam'])
+        self.track_talam.set_completion_list(self.autocomplete_dict['talam'])
+        self.track_composer.set_completion_list(self.autocomplete_dict['composer'])
+        self.track_title.set_completion_list(list(self.autocomplete_dict['krithi'].keys()))
     
     def destroy(self):
+        
         self.track_no.destroy()
         self.track_start.destroy()
         self.track_end.destroy()
@@ -52,6 +79,15 @@ class Track:
         self.track_swaram.destroy()
         self.track_comments.destroy()
 
+    def track_select(self, event):
+        print("Unfocus: attempting to autocomplete krithi")
+        krithi_name = self.track_title.get()
+        if krithi_name in self.autocomplete_dict['krithi']:
+            self.track_type.set(self.autocomplete_dict['krithi'][krithi_name][0])
+            self.track_ragam.set(self.autocomplete_dict['krithi'][krithi_name][1])
+            self.track_talam.set(self.autocomplete_dict['krithi'][krithi_name][2])
+            self.track_composer.set(self.autocomplete_dict['krithi'][krithi_name][3])
+            
 class KutcheriSplitterGUI:
     def __init__(self, master):
 
@@ -61,11 +97,11 @@ class KutcheriSplitterGUI:
         master.title("Kutcheri Splitter "+self.version)
 
         self.kutcheri_details = Frame(master, relief=GROOVE)
-        self.kutcheri_details.pack(side=LEFT, padx=5, pady=5)
+        self.kutcheri_details.pack(side=LEFT, padx=(5,0), pady=5)
         self.kutcheri_details.grid_columnconfigure(0, weight=1)
 
         self.status_label_text = StringVar()
-        self.set_status("Connecting to VLC...")
+        self.set_status("Loading autocompletes...")
         self.status_label = Label(self.kutcheri_details,
                                   textvariable=self.status_label_text,
                                   font=(None,13))
@@ -74,7 +110,7 @@ class KutcheriSplitterGUI:
         self.browse_label = Label(self.kutcheri_details, text="Music folder location: ")
         self.browse_label.grid(row=1, column=0, sticky=W, pady=(5,1), padx=5, columnspan=6)
 
-        self.music_dir_entry = Entry(self.kutcheri_details, font=(None,12), width=30)
+        self.music_dir_entry = Entry(self.kutcheri_details, font=(None,12), width=25)
         self.music_dir_entry.grid(row=2, column=0, padx=5, pady=1, columnspan=6, sticky=W)
         
         self.music_dir_browse = Button(self.kutcheri_details, text="Browse")
@@ -83,49 +119,49 @@ class KutcheriSplitterGUI:
         self.main_artist_label = Label(self.kutcheri_details, text="Main Artist")
         self.main_artist_label.grid(row=3, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.main_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.main_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.main_artist_entry.grid(row=4, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.violin_label = Label(self.kutcheri_details, text="Violin")
         self.violin_label.grid(row=5, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.violin_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.violin_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.violin_entry.grid(row=6, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.mridangam_label = Label(self.kutcheri_details, text="Mridangam")
         self.mridangam_label.grid(row=7, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.mridangam_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.mridangam_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.mridangam_entry.grid(row=8, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.ghatam_label = Label(self.kutcheri_details, text="Ghatam")
         self.ghatam_label.grid(row=9, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.ghatam_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.ghatam_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.ghatam_entry.grid(row=10, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.kanjira_label = Label(self.kutcheri_details, text="Kanjira")
         self.kanjira_label.grid(row=11, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.kanjira_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.kanjira_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.kanjira_entry.grid(row=12, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.morsing_label = Label(self.kutcheri_details, text="Morsing")
         self.morsing_label.grid(row=11, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.morsing_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.morsing_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.morsing_entry.grid(row=12, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.vocal_support_label = Label(self.kutcheri_details, text="Vocal Support")
         self.vocal_support_label.grid(row=13, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.vocal_support_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.vocal_support_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.vocal_support_entry.grid(row=14, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.other_artist_label = Label(self.kutcheri_details, text="Other Artist")
         self.other_artist_label.grid(row=15, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.other_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.other_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.other_artist_entry.grid(row=16, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.audio_quality_label = Label(self.kutcheri_details, text="Audio Quality")
@@ -139,13 +175,13 @@ class KutcheriSplitterGUI:
         self.sabha_label = Label(self.kutcheri_details, text="Sabha Name")
         self.sabha_label.grid(row=19, column=0, sticky=W, pady=(25,1), padx=5, columnspan=5)
 
-        self.sabha_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.sabha_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.sabha_entry.grid(row=20, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.location_label = Label(self.kutcheri_details, text="Location (City if in India, City, State if in US)")
         self.location_label.grid(row=21, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
 
-        self.location_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=30)
+        self.location_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
         self.location_entry.grid(row=22, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.date_label = Label(self.kutcheri_details, text="Date (YYYY-MM-DD)")
@@ -154,7 +190,7 @@ class KutcheriSplitterGUI:
         self.date_frame = Frame(self.kutcheri_details)
         self.date_frame.grid(row=24, column=0, sticky=W, pady=(0,5), padx=2)
         
-        self.year_combobox = Combobox(self.date_frame, width=20)
+        self.year_combobox = Combobox(self.date_frame, width=7)
         self.year_combobox['values'] = ('2015', '2016', '2017') #temporary
         self.year_combobox.state(['readonly'])
         self.year_combobox.grid(row=0, column=0, pady=(5,1), padx=5)
@@ -197,11 +233,14 @@ class KutcheriSplitterGUI:
         self.forward_10 = Button(self.track_details, text="10s>", command=lambda: self.seek(10))
         self.forward_10.grid(row=0, column=6, padx=3, pady=3)
 
+        self.splitting = False
         self.start_split = Button(self.track_details, text="Start Split")
         self.start_split.grid(row=1, column=0, padx=3, pady=3)
         self.end_split = Button(self.track_details, text="End Split")
+        #self.end_split.config(state='disabled') #deferring button disabling till a later release
         self.end_split.grid(row=1, column=1, padx=3, pady=3)
         self.end_start_split = Button(self.track_details, text="End/Start Split")
+        #self.end_start_split.config(state='disabled') #deferring button disabling till a later release
         self.end_start_split.grid(row=1, column=2, padx=3, pady=3)
         self.new_track = Button(self.track_details, text="New Track", command=self.add_track)
         self.new_track.grid(row=1, column=3, padx=3, pady=3)
@@ -236,17 +275,90 @@ class KutcheriSplitterGUI:
         self.track_comments_label = Label(self.track_list, text="Comments")
         self.track_comments_label.grid(row=0, column=11)
 
+        self.has_loaded_autocompletes=False
+
         #self.filedialog = filedialog.asksaveasfilename(initialdir = "/", title = "Select file")
         self.tracks = []
-        self.tracks.append(Track(self.track_list, len(self.tracks)+1))        
+        #self.tracks.append(Track(self.track_list, len(self.tracks)+1))
 
+    def load_google_credentials(self):
+        try: 
+            scope = ['https://spreadsheets.google.com/feeds']
+            creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
+            self.client = gspread.authorize(creds)
+        except TimeoutError:
+            print('Request timed out. Trying again.')
+            self.load_google_credentials()
+
+    def load_autocompletes(self):
+        print('Loading autocompletes')
+        flatten = lambda l: [item for sublist in l for item in sublist]
+        database = self.client.open('Kutcheri Splitter Database')
+        self.autocomplete_dict = dict()
+        
+        type_sheet = database.get_worksheet(1)
+        self.autocomplete_dict['type'] = flatten(type_sheet.get_all_values())
+        
+        ragam_sheet = database.get_worksheet(2)
+        self.autocomplete_dict['ragam'] = flatten(ragam_sheet.get_all_values())
+
+        talam_sheet = database.get_worksheet(3)
+        self.autocomplete_dict['talam'] = flatten(talam_sheet.get_all_values())
+
+        composer_sheet = database.get_worksheet(4)
+        self.autocomplete_dict['composer'] = flatten(composer_sheet.get_all_values())
+
+        main_artist_sheet = database.get_worksheet(5)
+        self.autocomplete_dict['main_artist'] = flatten(main_artist_sheet.get_all_values())
+
+        violin_sheet = database.get_worksheet(6)
+        self.autocomplete_dict['violin'] = flatten(violin_sheet.get_all_values())
+
+        mridangam_sheet = database.get_worksheet(7)
+        self.autocomplete_dict['mridangam'] = flatten(mridangam_sheet.get_all_values())
+
+        ghatam_sheet = database.get_worksheet(8)
+        self.autocomplete_dict['ghatam'] = flatten(ghatam_sheet.get_all_values())
+
+        kanjira_sheet = database.get_worksheet(9)
+        self.autocomplete_dict['kanjira'] = flatten(kanjira_sheet.get_all_values())
+
+        morsing_sheet = database.get_worksheet(10)
+        self.autocomplete_dict['morsing'] = flatten(morsing_sheet.get_all_values())
+
+        vocal_support_sheet = database.get_worksheet(11)
+        self.autocomplete_dict['vocal_support'] = flatten(vocal_support_sheet.get_all_values())
+
+        other_artist_sheet = database.get_worksheet(12)
+        self.autocomplete_dict['other_artist'] = flatten(other_artist_sheet.get_all_values())
+
+        sabha_sheet = database.get_worksheet(13)
+        self.autocomplete_dict['sabha'] = flatten(sabha_sheet.get_all_values())
+
+        krithi_sheet = database.get_worksheet(0)
+        krithi_info_raw = krithi_sheet.get_all_records()        
+        krithi_info = dict()
+        for record in krithi_info_raw:
+            krithi_info[record['krithi']] = (record['type'], record['ragam'], record['talam'], record['composer'])
+        self.autocomplete_dict['krithi'] = krithi_info
+                
+        self.main_artist_entry.set_completion_list(self.autocomplete_dict['main_artist'])
+        self.violin_entry.set_completion_list(self.autocomplete_dict['violin'])
+        self.mridangam_entry.set_completion_list(self.autocomplete_dict['mridangam'])
+        self.ghatam_entry.set_completion_list(self.autocomplete_dict['ghatam'])
+        self.kanjira_entry.set_completion_list(self.autocomplete_dict['kanjira'])
+        self.morsing_entry.set_completion_list(self.autocomplete_dict['morsing'])
+        self.vocal_support_entry.set_completion_list(self.autocomplete_dict['vocal_support'])
+        self.other_artist_entry.set_completion_list(self.autocomplete_dict['other_artist'])
+        self.sabha_entry.set_completion_list(self.autocomplete_dict['sabha'])
+        
     def add_track(self):
-        self.tracks.append(Track(self.track_list, len(self.tracks)+1))
+        self.tracks.append(Track(self.track_list, self.autocomplete_dict, len(self.tracks)+1))
 
     def delete_last_track(self):
         if (len(self.tracks) > 1):
             self.tracks[-1].destroy()
-            self.tracks.pop()
+            self.tracks.pop() #take it off the stack
 
     def pause(self):
         print("Attempting to pause")
@@ -278,6 +390,12 @@ class KutcheriSplitterGUI:
 
     def update(self):
         print("Update")
+        if (self.has_loaded_autocompletes == False):
+            self.load_google_credentials()
+            self.load_autocompletes()
+            self.has_loaded_autocompletes = True
+            self.tracks.append(Track(self.track_list, self.autocomplete_dict, len(self.tracks)+1))
+            self.set_status("Connecting to VLC...")
         current_time_raw = self.get_current_time()
         if (current_time_raw == -1):
             self.set_status("Error connecting to VLC")
@@ -317,15 +435,12 @@ class KutcheriSplitterGUI:
             print("ConnectionResetError")
             return -1
 
-
-#with open('RagamDatabase/ragam_list.csv', newline='') as csvfile:
-#    reader = csv.reader(csvfile, delimiter=',')
-#    for row in reader:
-#        print(''.join(row))
+def flatten_list(l):
+    return [item for sublist in l for item in sublist] 
     
 root = Tk()
 my_gui = KutcheriSplitterGUI(root)
-root.after(1000,my_gui.update)
+root.after(100,my_gui.update)
 root.mainloop()
 
     

@@ -13,6 +13,7 @@ import sys
 import os
 import tkinter
 import tkinter.ttk
+import time
 
 __version__ = "1.1"
 
@@ -36,10 +37,14 @@ class AutocompleteEntry(tkinter.Entry):
 
         def autocomplete(self, delta=0):
                 """autocomplete the Entry, delta may be 0/1/-1 to cycle through possible hits"""
+                print(self.position)
                 if delta: # need to delete selection otherwise we would fix the current position
                         self.delete(self.position, tkinter.END)
                 else: # set position to end so selection starts where textentry ended
-                        self.position = len(self.get())
+                        if self.selection_present():
+                                self.position = len(self.get())-len(self.selection_get())
+                        else:
+                                self.position = len(self.get())
                 # collect hits
                 _hits = []
                 for element in self._completion_list:
@@ -54,28 +59,35 @@ class AutocompleteEntry(tkinter.Entry):
                         self._hit_index = (self._hit_index + delta) % len(self._hits)
                 # now finally perform the auto completion
                 if self._hits:
-                        self.delete(0,tkinter.END)
-                        self.insert(0,self._hits[self._hit_index])
-                        self.select_range(self.position,tkinter.END)
+                          self.delete(0,tkinter.END)
+                          self.insert(0,self._hits[self._hit_index])
+                          print(self.position)
+                          #time.sleep(2)
+                          self.select_range(self.position,tkinter.END)
+                          #time.sleep(2)
+                          print(self.position)
+                          print(str(self.selection_present()))
+                          print(self.position)
 
         def handle_keyrelease(self, event):
                 """event handler for the keyrelease event on this widget"""
-                if event.keysym == "BackSpace":
-                        self.delete(self.index(tkinter.INSERT), tkinter.END)
-                        self.position = self.index(tkinter.END)
+##                if event.keysym == "BackSpace":
+##                        self.delete(self.index(tkinter.INSERT), tkinter.END)
+##                        self.position = self.index(tkinter.END)
                 if event.keysym == "Left":
                         if self.position < self.index(tkinter.END): # delete the selection
                                 self.delete(self.position, tkinter.END)
-                        else:
-                                self.position = self.position-1 # delete one character
-                                self.delete(self.position, tkinter.END)
+##                        else:
+##                                self.position = self.position-1 # delete one character
+##                                self.delete(self.position, tkinter.END)
                 if event.keysym == "Right":
                         self.position = self.index(tkinter.END) # go to end (no selection)
                 if event.keysym == "Down":
                         self.autocomplete(1) # cycle to next hit
                 if event.keysym == "Up":
                         self.autocomplete(-1) # cycle to previous hit
-                if len(event.keysym) == 1 or event.keysym in tkinter_umlauts:
+                if len(event.keysym) == 1 or event.keysym in tkinter_umlauts or event.keysym == "space":
+                        print('handling')
                         self.autocomplete()
 
 class AutocompleteCombobox(tkinter.ttk.Combobox):
@@ -94,7 +106,10 @@ class AutocompleteCombobox(tkinter.ttk.Combobox):
                 if delta: # need to delete selection otherwise we would fix the current position
                         self.delete(self.position, tkinter.END)
                 else: # set position to end so selection starts where textentry ended
-                        self.position = len(self.get())
+                        if self.selection_present(): #fixed bug where typing too fast replaces selection
+                                self.position = len(self.get())-len(self.selection_get())
+                        else:
+                                self.position = len(self.get()) 
                 # collect hits
                 _hits = []
                 for element in self._completion_list:
@@ -115,18 +130,18 @@ class AutocompleteCombobox(tkinter.ttk.Combobox):
 
         def handle_keyrelease(self, event):
                 """event handler for the keyrelease event on this widget"""
-                if event.keysym == "BackSpace":
-                        self.delete(self.index(tkinter.INSERT), tkinter.END)
-                        self.position = self.index(tkinter.END)
+##                if event.keysym == "BackSpace":
+##                        self.delete(self.index(tkinter.INSERT), tkinter.END)
+##                        self.position = self.index(tkinter.END)
                 if event.keysym == "Left":
                         if self.position < self.index(tkinter.END): # delete the selection
                                 self.delete(self.position, tkinter.END)
-                        else:
-                                self.position = self.position-1 # delete one character
-                                self.delete(self.position, tkinter.END)
+##                        else:
+##                                self.position = self.position-1 # delete one character
+##                                self.delete(self.position, tkinter.END)
                 if event.keysym == "Right":
                         self.position = self.index(tkinter.END) # go to end (no selection)
-                if len(event.keysym) == 1:
+                if len(event.keysym) == 1 or event.keysym == "space": #added spacebar to the list so that spaces work properly
                         self.autocomplete()
                 # No need for up/down, we'll jump to the popup
                 # list at the position of the autocompletion
@@ -148,5 +163,5 @@ def test(test_list):
         root.mainloop()
 
 if __name__ == '__main__':
-        test_list = ('apple', 'banana', 'CranBerry', 'dogwood', 'alpha', 'Acorn', 'Anise' )
+        test_list = ('apple', 'banana', 'CranBerry', 'dogwood', 'alpha', 'Acorn', 'Anise', 'term with spaces' )
         test(test_list)

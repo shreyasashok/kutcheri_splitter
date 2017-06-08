@@ -37,7 +37,7 @@ class AutocompleteEntry(tkinter.Entry):
 
         def autocomplete(self, delta=0):
                 """autocomplete the Entry, delta may be 0/1/-1 to cycle through possible hits"""
-                print(self.position)
+                #print(self.position)
                 if delta: # need to delete selection otherwise we would fix the current position
                         self.delete(self.position, tkinter.END)
                 else: # set position to end so selection starts where textentry ended
@@ -61,13 +61,13 @@ class AutocompleteEntry(tkinter.Entry):
                 if self._hits:
                           self.delete(0,tkinter.END)
                           self.insert(0,self._hits[self._hit_index])
-                          print(self.position)
+                          #print(self.position)
                           #time.sleep(2)
                           self.select_range(self.position,tkinter.END)
                           #time.sleep(2)
-                          print(self.position)
-                          print(str(self.selection_present()))
-                          print(self.position)
+                          #print(self.position)
+                          #print(str(self.selection_present()))
+                          #print(self.position)
 
         def handle_keyrelease(self, event):
                 """event handler for the keyrelease event on this widget"""
@@ -87,7 +87,7 @@ class AutocompleteEntry(tkinter.Entry):
                 if event.keysym == "Up":
                         self.autocomplete(-1) # cycle to previous hit
                 if len(event.keysym) == 1 or event.keysym in tkinter_umlauts or event.keysym == "space":
-                        print('handling')
+                        #print('handling')
                         self.autocomplete()
 
 class AutocompleteCombobox(tkinter.ttk.Combobox):

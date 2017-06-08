@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import filedialog
 from tkinter.ttk import *
 from telnetlib import Telnet
 import time
@@ -96,6 +97,9 @@ class Track:
     def set_end(self, time):
         self.track_end.delete(0, END)
         self.track_end.insert(0, str(time))
+
+    def get_label(self):
+        return self.track_start.get().strip()+'\t'+self.track_end.get().strip()+'\t'+self.track_title.get().strip()+', '+self.track_ragam.get().strip()+'\n'
             
 class KutcheriSplitterGUI:
     def __init__(self, master):
@@ -122,7 +126,7 @@ class KutcheriSplitterGUI:
         self.music_dir_entry = Entry(self.kutcheri_details, font=(None,12), width=25)
         self.music_dir_entry.grid(row=2, column=0, padx=5, pady=1, columnspan=6, sticky=W)
         
-        self.music_dir_browse = Button(self.kutcheri_details, text="Browse")
+        self.music_dir_browse = Button(self.kutcheri_details, text="Browse", command=self.browse)
         self.music_dir_browse.grid(row=2, column=6, padx=5, pady=1)
 
         self.main_artist_label = Label(self.kutcheri_details, text="Main Artist")
@@ -286,9 +290,7 @@ class KutcheriSplitterGUI:
 
         self.has_loaded_autocompletes=False
 
-        #self.filedialog = filedialog.asksaveasfilename(initialdir = "/", title = "Select file")
         self.tracks = []
-        #self.tracks.append(Track(self.track_list, len(self.tracks)+1))
 
     def load_google_credentials(self):
         try: 
@@ -409,7 +411,13 @@ class KutcheriSplitterGUI:
                 t.read_very_eager()
                 time.sleep(0.1)
                 t.close()
-                
+
+    def browse(self):
+        print("Opening file browser")
+        filename = filedialog.askdirectory(initialdir = "/", title = "Select music folder")
+        print(filename)
+        self.music_dir_entry.delete(0, END)
+        self.music_dir_entry.insert(0,str(filename))
 
     def update(self):
         print("Update")
@@ -464,8 +472,31 @@ class KutcheriSplitterGUI:
         main_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get()]))
         album_title = main_artists_name+' - '+', '.join(filter(None,[self.sabha_entry.get(), self.location_entry.get()]))+' - '+self.year_combobox.get()+'-'+self.month_combobox.get()+'-'+self.day_combobox.get()
         print(album_title)
-                                                        
-                                                               
+        year = self.year_combobox.get()
+        genre = 'Carnatic'
+
+        music_folder = self.music_dir_entry.get()
+        metadata_file_path = music_folder+'/'+album_title+"/Tags.xml"
+        labels_file_path = music_folder+'/'+album_title+"/Labels.txt"
+        csv_file_path = music_folder+'/'+album_title+"/Spreadsheet.csv"
+        print(metadata_file_path)
+        print(labels_file_path)
+
+        for track in self.tracks:
+            print(track.get_label())
+
+        os.makedirs(music_folder+'/'+album_title, exist_ok=True)
+        with open(metadata_file_path, "w") as metadata_file:
+            metadata_file.write('<tags>\n')
+            metadata_file.write('\t<tag name="ALBUM" value="'+album_title+'"/>\n')
+            metadata_file.write('\t<tag name="ARTIST" value="'+all_artists_name+'"/>\n')
+            metadata_file.write('\t<tag name="YEAR" value="'+year+'"/>\n')
+            metadata_file.write('\t<tag name="GENRE" value="Carnatic"/>\n')
+            metadata_file.write('</tags>')
+
+        with open(labels_file_path, "w") as labels_file:
+            for track in self.tracks:
+                labels_file.write(track.get_label())
 
 def flatten_list(l):
     return [item for sublist in l for item in sublist] 

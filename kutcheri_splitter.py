@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 from tkinter.ttk import *
 from telnetlib import Telnet
 import time
@@ -100,6 +100,9 @@ class Track:
 
     def get_label(self):
         return self.track_start.get().strip()+'\t'+self.track_end.get().strip()+'\t'+self.track_title.get().strip()+', '+self.track_ragam.get().strip()+'\n'
+
+    def get_csv(self):
+        return [self.track_title.get(), self.track_type.get(), self.track_ragam.get(), self.track_talam.get(), self.track_composer.get(), self.alapana_var.get(), self.niraval_var.get(), self.swaram_var.get(), self.track_comments.get()]
             
 class KutcheriSplitterGUI:
     def __init__(self, master):
@@ -467,11 +470,12 @@ class KutcheriSplitterGUI:
             return -1
 
     def generate(self):
+        print('Generating the files...')
+        self.set_status('Generating...(takes a while)')
         all_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get()]))
-        print(all_artists_name)
         main_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get()]))
-        album_title = main_artists_name+' - '+', '.join(filter(None,[self.sabha_entry.get(), self.location_entry.get()]))+' - '+self.year_combobox.get()+'-'+self.month_combobox.get()+'-'+self.day_combobox.get()
-        print(album_title)
+        album_date = self.year_combobox.get()+'-'+self.month_combobox.get()+'-'+self.day_combobox.get()
+        album_title = main_artists_name+' - '+', '.join(filter(None,[self.sabha_entry.get(), self.location_entry.get()]))+' - '+album_date
         year = self.year_combobox.get()
         genre = 'Carnatic'
 
@@ -479,8 +483,9 @@ class KutcheriSplitterGUI:
         metadata_file_path = music_folder+'/'+album_title+"/Tags.xml"
         labels_file_path = music_folder+'/'+album_title+"/Labels.txt"
         csv_file_path = music_folder+'/'+album_title+"/Spreadsheet.csv"
-        print(metadata_file_path)
-        print(labels_file_path)
+        print("Metadata path: "+metadata_file_path)
+        print("Labels path: "+labels_file_path)
+        print("CSV path: "+csv_file_path)
 
         for track in self.tracks:
             print(track.get_label())
@@ -497,6 +502,24 @@ class KutcheriSplitterGUI:
         with open(labels_file_path, "w") as labels_file:
             for track in self.tracks:
                 labels_file.write(track.get_label())
+
+        #now generate csv file
+        album_csv_data = ["", self.audio_quality_combobox.get(), self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get(), self.sabha_entry.get(), self.location_entry.get(), self.year_combobox.get(), album_date]
+        with open(csv_file_path, "w") as csv_file:
+            for track in self.tracks:
+                track_csv_data = track.get_csv()
+                full_csv_data = track_csv_data + album_csv_data
+                full_csv_data_string = ','.join('"{0}"'.format(d) for d in full_csv_data)
+                full_csv_data_string = full_csv_data_string+'\n'
+                csv_file.write(full_csv_data_string)
+                print("Writing row to google docs...")
+                archive = self.client.open('Carnatic Concert Recording Archive')
+                staging_sheet = archive.get_worksheet(1)
+                staging_sheet.insert_row(full_csv_data,2)
+
+        print("Done generating!")
+        messagebox.showinfo("Kutcheri Splitter", "Generation Complete!")
+                               
 
 def flatten_list(l):
     return [item for sublist in l for item in sublist] 

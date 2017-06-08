@@ -128,6 +128,8 @@ class KutcheriSplitterGUI:
 
         self.music_dir_entry = Entry(self.kutcheri_details, font=(None,12), width=25)
         self.music_dir_entry.grid(row=2, column=0, padx=5, pady=1, columnspan=6, sticky=W)
+        default_path = os.path.expanduser('~\Music')
+        self.music_dir_entry.insert(0, default_path)
         
         self.music_dir_browse = Button(self.kutcheri_details, text="Browse", command=self.browse)
         self.music_dir_browse.grid(row=2, column=6, padx=5, pady=1)
@@ -418,6 +420,7 @@ class KutcheriSplitterGUI:
     def browse(self):
         print("Opening file browser")
         filename = filedialog.askdirectory(initialdir = "/", title = "Select music folder")
+        filename = os.path.normcase(filename)
         print(filename)
         self.music_dir_entry.delete(0, END)
         self.music_dir_entry.insert(0,str(filename))
@@ -481,14 +484,14 @@ class KutcheriSplitterGUI:
 
         music_folder = self.music_dir_entry.get()
         metadata_file_path = music_folder+'/'+album_title+"/Tags.xml"
+        metadata_file_path = os.path.normpath(metadata_file_path)
         labels_file_path = music_folder+'/'+album_title+"/Labels.txt"
+        labels_file_path = os.path.normpath(labels_file_path)
         csv_file_path = music_folder+'/'+album_title+"/Spreadsheet.csv"
+        csv_file_path = os.path.normpath(csv_file_path)
         print("Metadata path: "+metadata_file_path)
         print("Labels path: "+labels_file_path)
         print("CSV path: "+csv_file_path)
-
-        for track in self.tracks:
-            print(track.get_label())
 
         os.makedirs(music_folder+'/'+album_title, exist_ok=True)
         with open(metadata_file_path, "w") as metadata_file:

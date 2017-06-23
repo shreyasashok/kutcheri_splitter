@@ -494,6 +494,7 @@ class KutcheriSplitterGUI:
         print("CSV path: "+csv_file_path)
 
         os.makedirs(music_folder+'/'+album_title, exist_ok=True)
+        print("Writing Metadata File")
         with open(metadata_file_path, "w") as metadata_file:
             metadata_file.write('<tags>\n')
             metadata_file.write('\t<tag name="ALBUM" value="'+album_title+'"/>\n')
@@ -502,11 +503,13 @@ class KutcheriSplitterGUI:
             metadata_file.write('\t<tag name="GENRE" value="Carnatic"/>\n')
             metadata_file.write('</tags>')
 
+        print("Writing Labels File")
         with open(labels_file_path, "w") as labels_file:
             for track in self.tracks:
                 labels_file.write(track.get_label())
 
         #now generate csv file
+        print("Writing CSV File")
         album_csv_data = ["", self.audio_quality_combobox.get(), self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get(), self.sabha_entry.get(), self.location_entry.get(), self.year_combobox.get(), album_date]
         with open(csv_file_path, "w") as csv_file:
             for track in self.tracks:
@@ -514,11 +517,21 @@ class KutcheriSplitterGUI:
                 full_csv_data = track_csv_data + album_csv_data
                 full_csv_data_string = ','.join('"{0}"'.format(d) for d in full_csv_data)
                 full_csv_data_string = full_csv_data_string+'\n'
-                csv_file.write(full_csv_data_string)
-                print("Writing row to google docs...")
-                archive = self.client.open('Carnatic Concert Recording Archive')
-                staging_sheet = archive.get_worksheet(1)
-                staging_sheet.insert_row(full_csv_data,2)
+                csv_file.write(full_csv_data_string)               
+                
+        #Write to google docs
+        print("Writing to Google Docs")
+        print("Reauthenticating with API")
+        self.load_google_credentials()
+        print("Opening Database Sheet")
+        archive = self.client.open('Carnatic Concert Recording Archive')
+        staging_sheet = archive.get_worksheet(1)
+                
+        for track in self.tracks:
+            print("Writing row to google docs...")
+            track_csv_data = track.get_csv()
+            full_csv_data = track_csv_data + album_csv_data
+            staging_sheet.insert_row(full_csv_data,2)
 
         print("Done generating!")
         messagebox.showinfo("Kutcheri Splitter", "Generation Complete!")

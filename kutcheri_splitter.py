@@ -217,7 +217,7 @@ class KutcheriSplitterGUI:
         self.date_separator_1.grid(row=0, column=1, pady=3)
 
         self.month_combobox = Combobox(self.date_frame, width=3)
-        self.month_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31') #temporary
+        self.month_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12') #temporary
         self.month_combobox.state(['readonly'])
         self.month_combobox.grid(row=0, column=2, pady=(5,1), padx=5)
 
@@ -225,7 +225,7 @@ class KutcheriSplitterGUI:
         self.date_separator_2.grid(row=0, column=3, pady=3)
 
         self.day_combobox = Combobox(self.date_frame, width=3)
-        self.day_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07','08') #temporary
+        self.day_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31') #temporary
         self.day_combobox.state(['readonly'])
         self.day_combobox.grid(row=0, column=4, pady=(5,1), padx=5)
 

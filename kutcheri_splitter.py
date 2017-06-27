@@ -99,7 +99,7 @@ class Track:
         self.track_end.insert(0, str(time))
 
     def get_label(self):
-        if track_ragam.get() == '':
+        if self.track_ragam.get() == '':
             return self.track_start.get().strip()+'\t'+self.track_end.get().strip()+'\t'+self.track_title.get().strip()+'\n'
         else:
             return self.track_start.get().strip()+'\t'+self.track_end.get().strip()+'\t'+self.track_title.get().strip()+', '+self.track_ragam.get().strip()+'\n'

@@ -8,6 +8,11 @@ import csv
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
+import httplib2
+from pydub import AudioSegment
+from PIL import Image
+from PIL import ImageFont
+from PIL import ImageDraw
 
 class Track:
     def __init__(self, master, autocomplete_dict, track_number):
@@ -15,29 +20,29 @@ class Track:
         self.track_number = track_number
 
         self.track_no = Label(self.master, text=track_number)
-        self.track_no.grid(row=track_number, column=0, padx=3, pady=3)
+        self.track_no.grid(row=track_number, column=0, padx=3, pady=2)
         
         self.track_start = Entry(self.master, width=6)
-        self.track_start.grid(row=track_number, column=1, padx=3, pady=3)
+        self.track_start.grid(row=track_number, column=1, padx=3, pady=2)
         
         self.track_end = Entry(self.master, width=6)
-        self.track_end.grid(row=track_number, column=2, padx=3, pady=3)
+        self.track_end.grid(row=track_number, column=2, padx=3, pady=2)
         
         self.track_title = AutocompleteCombobox(self.master, width=33)
         self.track_title.bind('<FocusOut>', self.track_select)
-        self.track_title.grid(row=track_number, column=3, padx=3, pady=3)
+        self.track_title.grid(row=track_number, column=3, padx=3, pady=2)
         
         self.track_type = AutocompleteCombobox(self.master, width=10)
-        self.track_type.grid(row=track_number, column=4, padx=3, pady=3)
+        self.track_type.grid(row=track_number, column=4, padx=3, pady=2)
         
         self.track_ragam = AutocompleteCombobox(self.master, width=23)
-        self.track_ragam.grid(row=track_number, column=5, padx=3, pady=3)
+        self.track_ragam.grid(row=track_number, column=5, padx=3, pady=2)
         
         self.track_talam = AutocompleteCombobox(self.master, width=10)
-        self.track_talam.grid(row=track_number, column=6, padx=3, pady=3)
+        self.track_talam.grid(row=track_number, column=6, padx=3, pady=2)
         
         self.track_composer = AutocompleteCombobox(self.master, width=23)
-        self.track_composer.grid(row=track_number, column=7, padx=3, pady=3)
+        self.track_composer.grid(row=track_number, column=7, padx=3, pady=2)
         
         self.alapana_var = StringVar()
         self.niraval_var = StringVar()
@@ -47,16 +52,16 @@ class Track:
         self.swaram_var.set('n')
         
         self.track_alapana = Checkbutton(self.master, variable=self.alapana_var, onvalue='y', offvalue='n')
-        self.track_alapana.grid(row=track_number, column=8, padx=3, pady=3)
+        self.track_alapana.grid(row=track_number, column=8, padx=3, pady=2)
         
         self.track_niraval = Checkbutton(self.master, variable=self.niraval_var, onvalue='y', offvalue='n')
-        self.track_niraval.grid(row=track_number, column=9, padx=3, pady=3)
+        self.track_niraval.grid(row=track_number, column=9, padx=3, pady=2)
         
         self.track_swaram = Checkbutton(self.master, variable=self.swaram_var, onvalue='y', offvalue='n')
-        self.track_swaram.grid(row=track_number, column=10, padx=3, pady=3)
+        self.track_swaram.grid(row=track_number, column=10, padx=3, pady=2)
         
         self.track_comments = Entry(self.master, width=25)
-        self.track_comments.grid(row=track_number, column=11, padx=3, pady=3)
+        self.track_comments.grid(row=track_number, column=11, padx=3, pady=2)
 
         self.autocomplete_dict = autocomplete_dict
 
@@ -98,14 +103,57 @@ class Track:
         self.track_end.delete(0, END)
         self.track_end.insert(0, str(time))
 
+    def get_start(self):
+        return float(self.track_start.get().strip())
+
+    def get_end(self):
+        return float(self.track_end.get().strip())
+
     def get_label(self):
         if self.track_ragam.get() == '':
             return self.track_start.get().strip()+'\t'+self.track_end.get().strip()+'\t'+self.track_title.get().strip()+'\n'
         else:
             return self.track_start.get().strip()+'\t'+self.track_end.get().strip()+'\t'+self.track_title.get().strip()+', '+self.track_ragam.get().strip()+'\n'
 
+    def get_filename(self):
+        if self.track_ragam.get() == '':
+            return self.track_title.get().strip()+'.mp3'
+        else:
+            return self.track_title.get().strip()+', '+self.track_ragam.get().strip()+'.mp3'
+        
+    def get_title(self):
+        if self.track_ragam.get() == '':
+            return self.track_title.get().strip()
+        else:
+            return self.track_title.get().strip()+', '+self.track_ragam.get().strip()
+
     def get_csv(self):
         return [self.track_title.get(), self.track_type.get(), self.track_ragam.get(), self.track_talam.get(), self.track_composer.get(), self.alapana_var.get(), self.niraval_var.get(), self.swaram_var.get(), self.track_comments.get()]
+
+    def get_save_string(self):
+        return self.track_start.get()+'|'+self.track_end.get()+'|'+self.track_title.get()+'|'+self.track_type.get()+'|'+self.track_ragam.get()+'|'+self.track_talam.get()+'|'+self.track_composer.get()+'|'+self.alapana_var.get()+'|'+self.niraval_var.get()+'|'+self.swaram_var.get()+'|'+self.track_comments.get()+'\n'
+
+    def set_save_string(self, save_string):
+        save_string_split = save_string.split('|')
+        self.track_start.delete(0,END)
+        self.track_start.insert(0,save_string_split[0])
+        self.track_end.delete(0,END)
+        self.track_end.insert(0,save_string_split[1])
+        self.track_title.delete(0,END)
+        self.track_title.insert(0,save_string_split[2])
+        self.track_type.delete(0,END)
+        self.track_type.insert(0,save_string_split[3])
+        self.track_ragam.delete(0,END)
+        self.track_ragam.insert(0,save_string_split[4])
+        self.track_talam.delete(0,END)
+        self.track_talam.insert(0,save_string_split[5])
+        self.track_composer.delete(0,END)
+        self.track_composer.insert(0,save_string_split[6])
+        self.alapana_var.set(save_string_split[7])
+        self.niraval_var.set(save_string_split[8])
+        self.swaram_var.set(save_string_split[9])
+        self.track_comments.delete(0,END)
+        self.track_comments.insert(0,save_string_split[10])
             
 class KutcheriSplitterGUI:
     def __init__(self, master):
@@ -137,103 +185,121 @@ class KutcheriSplitterGUI:
         self.music_dir_browse = Button(self.kutcheri_details, text="Browse", command=self.browse)
         self.music_dir_browse.grid(row=2, column=6, padx=5, pady=1)
 
+        self.file_browse_label = Label(self.kutcheri_details, text="Concert file location: ")
+        self.file_browse_label.grid(row=3, column=0, sticky=W, pady=(5,1), padx=5, columnspan=6)
+
+        self.file_browse_entry = Entry(self.kutcheri_details, font=(None,12), width=25)
+        self.file_browse_entry.grid(row=4, column=0, padx=5, pady=1, columnspan=6, sticky=W)
+                
+        self.file_browse = Button(self.kutcheri_details, text="Browse", command=self.file_browse)
+        self.file_browse.grid(row=4, column=6, padx=5, pady=1)
+
         self.main_artist_label = Label(self.kutcheri_details, text="Main Artist")
-        self.main_artist_label.grid(row=3, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.main_artist_label.grid(row=5, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.main_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.main_artist_entry.grid(row=4, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.main_artist_entry.grid(row=6, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.violin_label = Label(self.kutcheri_details, text="Violin")
-        self.violin_label.grid(row=5, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.violin_label.grid(row=7, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.violin_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.violin_entry.grid(row=6, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.violin_entry.grid(row=8, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.mridangam_label = Label(self.kutcheri_details, text="Mridangam")
-        self.mridangam_label.grid(row=7, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.mridangam_label.grid(row=9, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.mridangam_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.mridangam_entry.grid(row=8, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.mridangam_entry.grid(row=10, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.ghatam_label = Label(self.kutcheri_details, text="Ghatam")
-        self.ghatam_label.grid(row=9, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.ghatam_label.grid(row=11, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.ghatam_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.ghatam_entry.grid(row=10, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.ghatam_entry.grid(row=12, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.kanjira_label = Label(self.kutcheri_details, text="Kanjira")
-        self.kanjira_label.grid(row=11, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.kanjira_label.grid(row=13, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.kanjira_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.kanjira_entry.grid(row=12, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.kanjira_entry.grid(row=14, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.morsing_label = Label(self.kutcheri_details, text="Morsing")
-        self.morsing_label.grid(row=13, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.morsing_label.grid(row=15, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.morsing_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.morsing_entry.grid(row=14, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.morsing_entry.grid(row=16, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.vocal_support_label = Label(self.kutcheri_details, text="Vocal Support")
-        self.vocal_support_label.grid(row=15, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.vocal_support_label.grid(row=17, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.vocal_support_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.vocal_support_entry.grid(row=16, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.vocal_support_entry.grid(row=18, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.other_artist_label = Label(self.kutcheri_details, text="Other Artist")
-        self.other_artist_label.grid(row=17, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.other_artist_label.grid(row=19, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.other_artist_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.other_artist_entry.grid(row=18, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.other_artist_entry.grid(row=20, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.audio_quality_label = Label(self.kutcheri_details, text="Audio Quality")
-        self.audio_quality_label.grid(row=19, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.audio_quality_label.grid(row=21, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.audio_quality_combobox = Combobox(self.kutcheri_details)
         self.audio_quality_combobox['values'] = ('good', 'average', 'potato')
         self.audio_quality_combobox.state(['readonly'])
-        self.audio_quality_combobox.grid(row=20, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.audio_quality_combobox.grid(row=22, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.sabha_label = Label(self.kutcheri_details, text="Sabha Name")
-        self.sabha_label.grid(row=21, column=0, sticky=W, pady=(25,1), padx=5, columnspan=5)
+        self.sabha_label.grid(row=23, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.sabha_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.sabha_entry.grid(row=22, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.sabha_entry.grid(row=24, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.location_label = Label(self.kutcheri_details, text="Location (City if in India, City, State if in US)")
-        self.location_label.grid(row=23, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.location_label.grid(row=25, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.location_entry = AutocompleteEntry(self.kutcheri_details, font=(None,12), width=25)
-        self.location_entry.grid(row=24, column=0, padx=5, pady=1, columnspan=5, sticky=W)
+        self.location_entry.grid(row=26, column=0, padx=5, pady=1, columnspan=5, sticky=W)
 
         self.date_label = Label(self.kutcheri_details, text="Date (YYYY-MM-DD)")
-        self.date_label.grid(row=25, column=0, sticky=W, pady=(5,1), padx=5, columnspan=5)
+        self.date_label.grid(row=27, column=0, sticky=W, pady=(4,1), padx=5, columnspan=5)
 
         self.date_frame = Frame(self.kutcheri_details)
-        self.date_frame.grid(row=26, column=0, sticky=W, pady=(0,5), padx=2)
+        self.date_frame.grid(row=28, column=0, sticky=W, pady=(0,5), padx=2)
         
         self.year_combobox = Combobox(self.date_frame, width=7)
         self.year_combobox['values'] = ('1990', '1991', '1992', '1993', '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025') #temporary
         self.year_combobox.state(['readonly'])
-        self.year_combobox.grid(row=0, column=0, pady=(5,1), padx=5)
+        self.year_combobox.grid(row=0, column=0, pady=(4,1), padx=5)
 
         self.date_separator_1 = Label(self.date_frame, text="-", font=(None,12))
-        self.date_separator_1.grid(row=0, column=1, pady=3)
+        self.date_separator_1.grid(row=0, column=1, pady=2)
 
         self.month_combobox = Combobox(self.date_frame, width=3)
         self.month_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12') #temporary
         self.month_combobox.state(['readonly'])
-        self.month_combobox.grid(row=0, column=2, pady=(5,1), padx=5)
+        self.month_combobox.grid(row=0, column=2, pady=(4,1), padx=5)
 
         self.date_separator_2 = Label(self.date_frame, text="-", font=(None,12))
-        self.date_separator_2.grid(row=0, column=3, pady=3)
+        self.date_separator_2.grid(row=0, column=3, pady=2)
 
         self.day_combobox = Combobox(self.date_frame, width=3)
         self.day_combobox['values'] = ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31') #temporary
         self.day_combobox.state(['readonly'])
-        self.day_combobox.grid(row=0, column=4, pady=(5,1), padx=5)
+        self.day_combobox.grid(row=0, column=4, pady=(4,1), padx=5)
 
-        self.generate_button = Button(self.kutcheri_details, text="Generate", command=self.generate)
-        self.generate_button.grid(row=27, column=0, padx=5, pady=15, columnspan=7)
+        self.controls_frame = Frame(self.kutcheri_details)
+        self.controls_frame.grid(row=29, column=0, sticky=W, pady=15, padx=2)
+        
+        self.save_button = Button(self.controls_frame, text="Save", command=self.save)
+        self.save_button.grid(row=0, column=0, padx=5)
+        
+        self.load_button = Button(self.controls_frame, text="Load", command=self.load)
+        self.load_button.grid(row=0, column=1, padx=5)
+
+        self.generate_button = Button(self.controls_frame, text="Generate", command=self.generate)
+        self.generate_button.grid(row=0, column=2, padx=5)
         
 
         self.track_details = Frame(master, relief=GROOVE)
@@ -299,6 +365,7 @@ class KutcheriSplitterGUI:
         self.has_loaded_autocompletes=False
 
         self.tracks = []
+        self.client = None
 
     def load_google_credentials(self):
         try: 
@@ -308,11 +375,22 @@ class KutcheriSplitterGUI:
         except TimeoutError:
             print('Request timed out. Trying again.')
             self.load_google_credentials()
+        except httplib2.ServerNotFoundError:
+            print('Can''t connect to database. Google credentials will not be loaded.')
 
     def load_autocompletes(self):
         print('Loading autocompletes')
         flatten = lambda l: [item for sublist in l for item in sublist]
-        database = self.client.open('Kutcheri Splitter Database')
+        try:
+            if self.client is not None:
+                database = self.client.open('Kutcheri Splitter Database')
+            else:
+                print('Google credentials don''t seem to be loaded. Will not attempt to connect to database.')
+                return
+        except IOError:
+            print('Can''t connect to database. Autocompletes will not be loaded.')
+            return
+                    
         self.autocomplete_dict = dict()
         
         type_sheet = database.get_worksheet(1)
@@ -422,12 +500,88 @@ class KutcheriSplitterGUI:
 
     def browse(self):
         print("Opening file browser")
-        filename = filedialog.askdirectory(initialdir = "/", title = "Select music folder")
+        filename = filedialog.askdirectory(initialdir = "~", title = "Select music folder")
         filename = os.path.normcase(filename)
         print(filename)
         self.music_dir_entry.delete(0, END)
         self.music_dir_entry.insert(0,str(filename))
 
+    def file_browse(self):
+        print("Opening file browser")
+        filename = filedialog.askopenfilename(initialdir = "~", title = "Select concert file")
+        filename = os.path.normcase(filename)
+        print(filename)
+        self.file_browse_entry.delete(0, END)
+        self.file_browse_entry.insert(0,str(filename))
+
+    def save(self):
+        print("Opening file browser")
+        filename = filedialog.asksaveasfilename(initialdir = "~", title = "Create save file", defaultextension=".split", filetypes=[("Split files", "*.split")])
+        filename = os.path.normcase(filename)
+        if not filename:
+            return
+        with open(filename, "w") as save_file:
+            save_file.write(self.file_browse_entry.get()+'|'+self.main_artist_entry.get()+'|'+self.violin_entry.get()+'|'+self.mridangam_entry.get()+'|'+self.ghatam_entry.get()+'|'+
+                            self.kanjira_entry.get()+'|'+self.morsing_entry.get()+'|'+self.vocal_support_entry.get()+'|'+self.other_artist_entry.get()+'|'+self.audio_quality_combobox.get()+'|'+
+                            self.sabha_entry.get()+'|'+self.location_entry.get()+'|'+self.year_combobox.get()+'|'+self.month_combobox.get()+'|'+self.day_combobox.get())
+            for track in self.tracks:
+                save_file.write(track.get_save_string())
+                
+
+    def load(self):
+        print("Opening file browser")
+        filename = filedialog.askopenfilename(initialdir = "~", title = "Open save file", defaultextension=".split", filetypes=[("Split files", "*.split")])
+        filename = os.path.normcase(filename)
+        if not filename:
+            return
+
+        while (len(self.tracks) > 1):
+            self.tracks[-1].destroy()
+            self.tracks.pop()
+
+        with open(filename, "r") as load_file:
+            album_data = load_file.readline()
+            album_data_split = album_data.split("|")
+            self.file_browse_entry.delete(0,END)
+            self.file_browse_entry.insert(0,album_data_split[0])
+            self.main_artist_entry.delete(0,END)
+            self.main_artist_entry.insert(0,album_data_split[1])
+            self.violin_entry.delete(0,END)
+            self.violin_entry.insert(0,album_data_split[2])
+            self.mridangam_entry.delete(0,END)
+            self.mridangam_entry.insert(0,album_data_split[3])
+            self.ghatam_entry.delete(0,END)
+            self.ghatam_entry.insert(0,album_data_split[4])
+            self.kanjira_entry.delete(0,END)
+            self.kanjira_entry.insert(0,album_data_split[5])
+            self.morsing_entry.delete(0,END)
+            self.morsing_entry.insert(0,album_data_split[6])
+            self.vocal_support_entry.delete(0,END)
+            self.vocal_support_entry.insert(0,album_data_split[7])
+            self.other_artist_entry.delete(0,END)
+            self.other_artist_entry.insert(0,album_data_split[8])
+            self.audio_quality_combobox.set(album_data_split[9])
+            self.sabha_entry.delete(0,END)
+            self.sabha_entry.insert(0,album_data_split[10])
+            self.location_entry.delete(0,END)
+            self.location_entry.insert(0,album_data_split[11])
+            self.year_combobox.set(album_data_split[12])
+            self.month_combobox.set(album_data_split[13])
+            self.day_combobox.set(album_data_split[14])
+
+            first_track = True
+            while True:
+                current_line = load_file.readline()
+                if not current_line:
+                    break
+                if first_track:
+                    self.tracks[0].set_save_string(current_line)
+                    first_track = False
+                else:
+                    self.add_track()
+                    self.tracks[-1].set_save_string(current_line)
+            
+        
     def update(self):
         print("Update")
         if (self.has_loaded_autocompletes == False):
@@ -520,24 +674,69 @@ class KutcheriSplitterGUI:
                 full_csv_data = track_csv_data + album_csv_data
                 full_csv_data_string = ','.join('"{0}"'.format(d) for d in full_csv_data)
                 full_csv_data_string = full_csv_data_string+'\n'
-                csv_file.write(full_csv_data_string)               
-                
-        #Write to google docs
-        print("Writing to Google Docs")
-        print("Reauthenticating with API")
-        self.load_google_credentials()
-        print("Opening Database Sheet")
-        archive = self.client.open('Carnatic Concert Recording Archive')
-        staging_sheet = archive.get_worksheet(1)
-                
-        for track in self.tracks:
-            print("Writing row to google docs...")
-            track_csv_data = track.get_csv()
-            full_csv_data = track_csv_data + album_csv_data
-            staging_sheet.insert_row(full_csv_data,2)
+                csv_file.write(full_csv_data_string)
 
-        print("Done generating!")
-        messagebox.showinfo("Kutcheri Splitter", "Generation Complete!")
+        #split audio 
+        print("Splitting audio")
+        input_file = AudioSegment.from_file(self.file_browse_entry.get())
+        output_tracks = []
+        for track in self.tracks:
+            track_start = int(track.get_start()*1000)
+            track_end = int(track.get_end()*1000)
+            track_file = input_file[track_start:track_end]
+            track_file.export(music_folder+'/'+album_title+'/'+track.get_filename(), format='mp3', tags={'title':track.get_title(),'album':album_title, 'artist':all_artists_name, 'year':year, 'genre':'Carnatic'}, parameters=['-write_xing', '0'])
+
+        #generate YouTube background
+        print("Generating YouTube background")
+        font = ImageFont.truetype("arial.ttf", 25)
+        font_color = (230,230,230)
+        for track in self.tracks:
+            blank_bg = Image.open("background.png")
+            draw_bg = ImageDraw.Draw(blank_bg)
+            draw_bg.text((300,210), track.get_title(), font_color, font=font)
+            draw_bg.text((300,290), self.sabha_entry.get()+', '+self.location_entry.get()+' '+year, font_color, font=font)
+            draw_bg.text((300,370), "Main Artist: "+self.main_artist_entry.get(), font_color, font=font)
+            draw_bg.text((300,410), "Violinist: "+self.violin_entry.get(), font_color, font=font)
+            draw_bg.text((300,450), "Mridangist: "+self.mridangam_entry.get(), font_color, font=font)
+            current_y = 490
+
+            if self.ghatam_entry.get():
+                draw_bg.text((300,current_y), "Ghatam: "+self.ghatam_entry.get(), font_color, font=font)
+                current_y += 40
+            if self.kanjira_entry.get():
+                draw_bg.text((300,current_y), "Kanjira: "+self.kanjira_entry.get(), font_color, font=font)
+                current_y += 40
+            if self.morsing_entry.get():
+                draw_bg.text((300,current_y), "Morsing: "+self.morsing_entry.get(), font_color, font=font)
+                current_y += 40
+            if self.vocal_support_entry.get():
+                draw_bg.text((300,current_y), "Vocal Support: "+self.vocal_support_entry.get(), font_color, font=font)
+                current_y += 40
+            if self.other_artist_entry.get():
+                draw_bg.text((300,current_y), "Other Artist: "+self.other_artist_entry.get(), font_color, font=font)
+                current_y += 40    
+            
+            blank_bg.save(music_folder+'/'+album_title+'/'+track.get_title()+'.png')
+               
+        #Write to google docs
+        if self.client is not None:
+            print("Writing to Google Docs")
+            print("Reauthenticating with API")
+            self.load_google_credentials()
+            print("Opening Database Sheet")
+            archive = self.client.open('Carnatic Concert Recording Archive')
+            staging_sheet = archive.get_worksheet(1)
+                    
+            for track in self.tracks:
+                print("Writing row to google docs...")
+                track_csv_data = track.get_csv()
+                full_csv_data = track_csv_data + album_csv_data
+                staging_sheet.insert_row(full_csv_data,2)
+
+            print("Done generating!")
+            messagebox.showinfo("Kutcheri Splitter", "Generation Complete!")
+        else:
+            print('Google credentials don''t seem to be loaded. Will not write to Google Docs.')
                                
 
 def flatten_list(l):

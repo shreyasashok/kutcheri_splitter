@@ -5,8 +5,7 @@ from telnetlib import Telnet
 import time
 from tkentrycomplete import AutocompleteEntry, AutocompleteCombobox
 import csv
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import pygsheets
 import os
 import httplib2
 from pydub import AudioSegment
@@ -14,6 +13,7 @@ from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
 import subprocess
+import datetime
 
 class Track:
     def __init__(self, master, autocomplete_dict, track_number):
@@ -63,6 +63,8 @@ class Track:
         
         self.track_comments = Entry(self.master, width=25)
         self.track_comments.grid(row=track_number, column=11, padx=3, pady=2)
+
+        self.youtube_id = "YT"
 
         self.autocomplete_dict = autocomplete_dict
 
@@ -129,7 +131,7 @@ class Track:
             return self.track_title.get().strip()+', '+self.track_ragam.get().strip()
 
     def get_csv(self):
-        return [self.track_title.get(), self.track_type.get(), self.track_ragam.get(), self.track_talam.get(), self.track_composer.get(), self.alapana_var.get(), self.niraval_var.get(), self.swaram_var.get(), self.track_comments.get()]
+        return ["", self.track_number, self.track_title.get(), self.track_type.get(), self.track_ragam.get(), self.track_talam.get(), self.track_composer.get(), self.alapana_var.get(), self.niraval_var.get(), self.swaram_var.get(), self.track_comments.get(), self.youtube_id]
 
     def get_save_string(self):
         return self.track_start.get().strip()+'|'+self.track_end.get().strip()+'|'+self.track_title.get().strip()+'|'+self.track_type.get().strip()+'|'+self.track_ragam.get().strip()+'|'+self.track_talam.get().strip()+'|'+self.track_composer.get().strip()+'|'+self.alapana_var.get().strip()+'|'+self.niraval_var.get().strip()+'|'+self.swaram_var.get().strip()+'|'+self.track_comments.get().strip()+'\n'
@@ -370,9 +372,9 @@ class KutcheriSplitterGUI:
 
     def load_google_credentials(self):
         try: 
-            scope = ['https://spreadsheets.google.com/feeds']
-            creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
-            self.client = gspread.authorize(creds)
+##            scope = ['https://spreadsheets.google.com/feeds']
+##            creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
+            self.client = pygsheets.authorize(service_file='client_secret.json')
         except TimeoutError:
             print('Request timed out. Trying again.')
             self.load_google_credentials()
@@ -394,50 +396,51 @@ class KutcheriSplitterGUI:
                     
         self.autocomplete_dict = dict()
         
-        type_sheet = database.get_worksheet(1)
+        type_sheet = database.worksheet(value=1)
         self.autocomplete_dict['type'] = flatten(type_sheet.get_all_values())
+        print(self.autocomplete_dict['type'])
         
-        ragam_sheet = database.get_worksheet(2)
+        ragam_sheet = database.worksheet(value=2)
         self.autocomplete_dict['ragam'] = flatten(ragam_sheet.get_all_values())
 
-        talam_sheet = database.get_worksheet(3)
+        talam_sheet = database.worksheet(value=3)
         self.autocomplete_dict['talam'] = flatten(talam_sheet.get_all_values())
 
-        composer_sheet = database.get_worksheet(4)
+        composer_sheet = database.worksheet(value=4)
         self.autocomplete_dict['composer'] = flatten(composer_sheet.get_all_values())
 
-        main_artist_sheet = database.get_worksheet(5)
+        main_artist_sheet = database.worksheet(value=5)
         self.autocomplete_dict['main_artist'] = flatten(main_artist_sheet.get_all_values())
 
-        violin_sheet = database.get_worksheet(6)
+        violin_sheet = database.worksheet(value=6)
         self.autocomplete_dict['violin'] = flatten(violin_sheet.get_all_values())
 
-        mridangam_sheet = database.get_worksheet(7)
+        mridangam_sheet = database.worksheet(value=7)
         self.autocomplete_dict['mridangam'] = flatten(mridangam_sheet.get_all_values())
 
-        ghatam_sheet = database.get_worksheet(8)
+        ghatam_sheet = database.worksheet(value=8)
         self.autocomplete_dict['ghatam'] = flatten(ghatam_sheet.get_all_values())
 
-        kanjira_sheet = database.get_worksheet(9)
+        kanjira_sheet = database.worksheet(value=9)
         self.autocomplete_dict['kanjira'] = flatten(kanjira_sheet.get_all_values())
 
-        morsing_sheet = database.get_worksheet(10)
+        morsing_sheet = database.worksheet(value=10)
         self.autocomplete_dict['morsing'] = flatten(morsing_sheet.get_all_values())
 
-        vocal_support_sheet = database.get_worksheet(11)
+        vocal_support_sheet = database.worksheet(value=11)
         self.autocomplete_dict['vocal_support'] = flatten(vocal_support_sheet.get_all_values())
 
-        other_artist_sheet = database.get_worksheet(12)
+        other_artist_sheet = database.worksheet(value=12)
         self.autocomplete_dict['other_artist'] = flatten(other_artist_sheet.get_all_values())
 
-        sabha_sheet = database.get_worksheet(13)
+        sabha_sheet = database.worksheet(value=13)
         self.autocomplete_dict['sabha'] = flatten(sabha_sheet.get_all_values())
 
-        krithi_sheet = database.get_worksheet(0)
-        krithi_info_raw = krithi_sheet.get_all_records()        
+        krithi_sheet = database.worksheet(value=0)
+        krithi_info_raw = krithi_sheet.get_all_values()
         krithi_info = dict()
         for record in krithi_info_raw:
-            krithi_info[record['krithi']] = (record['type'], record['ragam'], record['talam'], record['composer'])
+            krithi_info[record[0]] = (record[1], record[2], record[3], record[4])
         self.autocomplete_dict['krithi'] = krithi_info
                 
         self.main_artist_entry.set_completion_list(self.autocomplete_dict['main_artist'])
@@ -636,6 +639,7 @@ class KutcheriSplitterGUI:
         all_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get()]))
         main_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get()]))
         album_date = self.year_combobox.get()+'-'+self.month_combobox.get()+'-'+self.day_combobox.get()
+        upload_date = datetime.datetime.now().strftime("%Y-%m-%d")
         album_title = main_artists_name+' - '+', '.join(filter(None,[self.sabha_entry.get(), self.location_entry.get()]))+' - '+album_date
         year = self.year_combobox.get()
         genre = 'Carnatic'
@@ -645,11 +649,14 @@ class KutcheriSplitterGUI:
         metadata_file_path = os.path.normpath(metadata_file_path)
         labels_file_path = music_folder+'/'+album_title+"/Labels.txt"
         labels_file_path = os.path.normpath(labels_file_path)
-        csv_file_path = music_folder+'/'+album_title+"/Spreadsheet.csv"
-        csv_file_path = os.path.normpath(csv_file_path)
+        csv_song_file_path = music_folder+'/'+album_title+"/SongSpreadsheet.csv"
+        csv_song_file_path = os.path.normpath(csv_song_file_path)
+        csv_album_file_path = music_folder+'/'+album_title+"/AlbumSpreadsheet.csv"
+        csv_album_file_path = os.path.normpath(csv_album_file_path)
         print("Metadata path: "+metadata_file_path)
         print("Labels path: "+labels_file_path)
-        print("CSV path: "+csv_file_path)
+        print("CSV song path: "+csv_song_file_path)
+        print("CSV album path: "+csv_album_file_path)
 
         os.makedirs(music_folder+'/'+album_title, exist_ok=True)
         os.makedirs(music_folder+'/'+album_title+'/audio', exist_ok=True)
@@ -670,16 +677,31 @@ class KutcheriSplitterGUI:
             for track in self.tracks:
                 labels_file.write(track.get_label())
 
+
+        #fetch latest album ID
+        album_id = -1
+        print("Fetching Album ID")
+        self.load_google_credentials()
+        print("Opening Database Sheet")
+        archive = self.client.open('Carnatic Concert Recording Archive V2')
+        data_sheet = archive.worksheet(value=4)
+        album_id = data_sheet.get_value((1,2))
+        print("Album ID: "+album_id)
+
         #now generate csv file
         print("Writing CSV File")
-        album_csv_data = ["", self.audio_quality_combobox.get(), self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get(), self.sabha_entry.get(), self.location_entry.get(), self.year_combobox.get(), album_date]
-        with open(csv_file_path, "w") as csv_file:
+        album_csv_data = [album_id, self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get(), self.sabha_entry.get(), self.location_entry.get(), self.year_combobox.get(), album_date, self.audio_quality_combobox.get(), upload_date]
+        with open(csv_album_file_path, "w") as csv_file:
+            album_csv_data_string = ','.join('"{0}"'.format(d) for d in album_csv_data)
+            album_csv_data_string = album_csv_data_string+'\n'
+            csv_file.write(album_csv_data_string)
+        with open(csv_song_file_path, "w") as csv_file:
             for track in self.tracks:
                 track_csv_data = track.get_csv()
-                full_csv_data = track_csv_data + album_csv_data
-                full_csv_data_string = ','.join('"{0}"'.format(d) for d in full_csv_data)
-                full_csv_data_string = full_csv_data_string+'\n'
-                csv_file.write(full_csv_data_string)
+                track_csv_data[0] = album_id
+                track_csv_data_string = ','.join('"{0}"'.format(d) for d in track_csv_data)
+                track_csv_data_string = track_csv_data_string+'\n'
+                csv_file.write(track_csv_data_string)
 
         #split audio 
         print("Splitting audio")
@@ -742,14 +764,17 @@ class KutcheriSplitterGUI:
             print("Reauthenticating with API")
             self.load_google_credentials()
             print("Opening Database Sheet")
-            archive = self.client.open('Carnatic Concert Recording Archive')
-            staging_sheet = archive.get_worksheet(1)
+            archive = self.client.open('Carnatic Concert Recording Archive V2')
+            songs_staging_sheet = archive.worksheet(value=2)
+            album_staging_sheet = archive.worksheet(value=3)
                     
+            print("Writing album data to google docs...")
+            album_staging_sheet.insert_rows(1, values=album_csv_data)
             for track in self.tracks:
-                print("Writing row to google docs...")
+                print("Writing track data to google docs...")
                 track_csv_data = track.get_csv()
-                full_csv_data = track_csv_data + album_csv_data
-                staging_sheet.insert_row(full_csv_data,2)
+                track_csv_data[0] = album_id
+                songs_staging_sheet.insert_rows(1, values=track_csv_data)
 
             print("Done generating!")
             messagebox.showinfo("Kutcheri Splitter", "Generation Complete!")

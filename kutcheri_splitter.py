@@ -662,6 +662,7 @@ class KutcheriSplitterGUI:
         os.makedirs(music_folder+'/'+album_title+'/audio', exist_ok=True)
         os.makedirs(music_folder+'/'+album_title+'/video', exist_ok=True)
         os.makedirs(music_folder+'/'+album_title+'/images', exist_ok=True)
+        os.makedirs(music_folder+'/'+album_title+'/descriptions', exist_ok=True)
         
         print("Writing Metadata File")
         with open(metadata_file_path, "w") as metadata_file:
@@ -757,6 +758,51 @@ class KutcheriSplitterGUI:
             subprocess.run("ffmpeg -loop 1 -y -i \"{}\" -i \"{}\" -acodec copy -vcodec libx264 -shortest -preset ultrafast \"{}\"".format(image_path, audio_path, video_path), shell=True,
                            stdout=subprocess.PIPE)
             print('Processed video file: '+video_path)
+
+        #upload to YouTube
+        print("Uploading to youtube")
+        youtube_upload_location = "C:/Users/shrey/youtube-upload-master/bin/youtube-upload"
+        for track in self.tracks:
+            video_path = music_folder+'/'+album_title+'/video/'+track.get_title()+'.avi'
+            title = track.get_title()+' - '+main_artists_name
+            description = ""+track.get_title()+'\n'
+            if track.track_talam.get():
+                description = description+'Talam: '+track.track_talam.get()+'\n'
+            if track.track_composer.get():
+                description = description+'Composer: '+track.track_composer.get()+'\n'
+                
+            description = description+'\nMain Artist: '+self.main_artist_entry.get()+'\n'
+            if self.violin_entry.get():
+                description = description+'Violin: '+self.violin_entry.get()+'\n'
+            if self.mridangam_entry.get():
+                description = description+'Mridangam: '+self.mridangam_entry.get()+'\n'
+            if self.ghatam_entry.get():
+                description = description+'Ghatam: '+self.ghatam_entry.get()+'\n'
+            if self.kanjira_entry.get():
+               description = description+'Kanjira: '+self.kanjira_entry.get()+'\n'
+            if self.morsing_entry.get():
+                description = description+'Morsing: '+self.morsing_entry.get()+'\n'
+            if self.vocal_support_entry.get():
+                description = description+'Vocal Support: '+self.vocal_support_entry.get()+'\n'
+            if self.other_artist_entry.get():
+                description = description+'Other Artist: '+self.other_artist_entry.get()+'\n'
+            description = description+'\n'+'Sabha: '+self.sabha_entry.get()+', '+self.location_entry.get()+'\n'+'Date: '+album_date
+            description_file_path = music_folder+'/'+album_title+'/descriptions/'+track.get_title()+'.txt'
+            with open(description_file_path, mode='w') as description_file:
+                description_file.write(description)
+            
+            print("Title:")
+            print(title)
+            print("Description:")
+            print(description)
+            print("Beginning upload...")
+            command = youtube_upload_location+" --title=\""+title+"\" --description-file=\""+description_file_path+"\" --category=\"Music\" --privacy=\"unlisted\" \""+video_path+"\""
+            print("Command: "+command)
+            result = subprocess.run(command, shell=True, stdout=subprocess.PIPE)
+            print("Upload finished!")
+            video_id = result.stdout.split()[-1].decode('ASCII')
+            print("Video ID: "+str(video_id))
+            track.youtube_id = video_id            
                            
         #Write to google docs
         if self.client is not None:

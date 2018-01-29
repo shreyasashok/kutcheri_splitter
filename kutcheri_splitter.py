@@ -13,6 +13,7 @@ from pydub import AudioSegment
 from PIL import Image
 from PIL import ImageFont
 from PIL import ImageDraw
+import subprocess
 
 class Track:
     def __init__(self, master, autocomplete_dict, track_number):
@@ -131,7 +132,7 @@ class Track:
         return [self.track_title.get(), self.track_type.get(), self.track_ragam.get(), self.track_talam.get(), self.track_composer.get(), self.alapana_var.get(), self.niraval_var.get(), self.swaram_var.get(), self.track_comments.get()]
 
     def get_save_string(self):
-        return self.track_start.get()+'|'+self.track_end.get()+'|'+self.track_title.get()+'|'+self.track_type.get()+'|'+self.track_ragam.get()+'|'+self.track_talam.get()+'|'+self.track_composer.get()+'|'+self.alapana_var.get()+'|'+self.niraval_var.get()+'|'+self.swaram_var.get()+'|'+self.track_comments.get()+'\n'
+        return self.track_start.get().strip()+'|'+self.track_end.get().strip()+'|'+self.track_title.get().strip()+'|'+self.track_type.get().strip()+'|'+self.track_ragam.get().strip()+'|'+self.track_talam.get().strip()+'|'+self.track_composer.get().strip()+'|'+self.alapana_var.get().strip()+'|'+self.niraval_var.get().strip()+'|'+self.swaram_var.get().strip()+'|'+self.track_comments.get().strip()+'\n'
 
     def set_save_string(self, save_string):
         save_string_split = save_string.split('|')
@@ -521,9 +522,9 @@ class KutcheriSplitterGUI:
         if not filename:
             return
         with open(filename, "w") as save_file:
-            save_file.write(self.file_browse_entry.get()+'|'+self.main_artist_entry.get()+'|'+self.violin_entry.get()+'|'+self.mridangam_entry.get()+'|'+self.ghatam_entry.get()+'|'+
-                            self.kanjira_entry.get()+'|'+self.morsing_entry.get()+'|'+self.vocal_support_entry.get()+'|'+self.other_artist_entry.get()+'|'+self.audio_quality_combobox.get()+'|'+
-                            self.sabha_entry.get()+'|'+self.location_entry.get()+'|'+self.year_combobox.get()+'|'+self.month_combobox.get()+'|'+self.day_combobox.get())
+            save_file.write(self.file_browse_entry.get().strip()+'|'+self.main_artist_entry.get().strip()+'|'+self.violin_entry.get().strip()+'|'+self.mridangam_entry.get().strip()+'|'+self.ghatam_entry.get().strip()+'|'+
+                            self.kanjira_entry.get().strip()+'|'+self.morsing_entry.get().strip()+'|'+self.vocal_support_entry.get().strip()+'|'+self.other_artist_entry.get().strip()+'|'+self.audio_quality_combobox.get().strip()+'|'+
+                            self.sabha_entry.get().strip()+'|'+self.location_entry.get().strip()+'|'+self.year_combobox.get().strip()+'|'+self.month_combobox.get().strip()+'|'+self.day_combobox.get().strip())
             for track in self.tracks:
                 save_file.write(track.get_save_string())
                 
@@ -567,7 +568,7 @@ class KutcheriSplitterGUI:
             self.location_entry.insert(0,album_data_split[11])
             self.year_combobox.set(album_data_split[12])
             self.month_combobox.set(album_data_split[13])
-            self.day_combobox.set(album_data_split[14])
+            self.day_combobox.set(album_data_split[14].strip())
 
             first_track = True
             while True:
@@ -651,6 +652,10 @@ class KutcheriSplitterGUI:
         print("CSV path: "+csv_file_path)
 
         os.makedirs(music_folder+'/'+album_title, exist_ok=True)
+        os.makedirs(music_folder+'/'+album_title+'/audio', exist_ok=True)
+        os.makedirs(music_folder+'/'+album_title+'/video', exist_ok=True)
+        os.makedirs(music_folder+'/'+album_title+'/images', exist_ok=True)
+        
         print("Writing Metadata File")
         with open(metadata_file_path, "w") as metadata_file:
             metadata_file.write('<tags>\n')
@@ -684,7 +689,7 @@ class KutcheriSplitterGUI:
             track_start = int(track.get_start()*1000)
             track_end = int(track.get_end()*1000)
             track_file = input_file[track_start:track_end]
-            track_file.export(music_folder+'/'+album_title+'/'+track.get_filename(), format='mp3', tags={'title':track.get_title(),'album':album_title, 'artist':all_artists_name, 'year':year, 'genre':'Carnatic'}, parameters=['-write_xing', '0'])
+            track_file.export(music_folder+'/'+album_title+'/audio/'+track.get_filename(), format='mp3', tags={'title':track.get_title(),'album':album_title, 'artist':all_artists_name, 'year':year, 'genre':'Carnatic'}, parameters=['-write_xing', '0'])
 
         #generate YouTube background
         print("Generating YouTube background")
@@ -696,10 +701,13 @@ class KutcheriSplitterGUI:
             draw_bg.text((300,210), track.get_title(), font_color, font=font)
             draw_bg.text((300,290), self.sabha_entry.get()+', '+self.location_entry.get()+' '+year, font_color, font=font)
             draw_bg.text((300,370), "Main Artist: "+self.main_artist_entry.get(), font_color, font=font)
-            draw_bg.text((300,410), "Violinist: "+self.violin_entry.get(), font_color, font=font)
-            draw_bg.text((300,450), "Mridangist: "+self.mridangam_entry.get(), font_color, font=font)
-            current_y = 490
-
+            current_y = 410
+            if self.violin_entry.get():
+                draw_bg.text((300,current_y), "Violinist: "+self.violin_entry.get(), font_color, font=font)
+                current_y += 40
+            if self.mridangam_entry.get():
+                draw_bg.text((300,450), "Mridangist: "+self.mridangam_entry.get(), font_color, font=font)
+                current_y += 40
             if self.ghatam_entry.get():
                 draw_bg.text((300,current_y), "Ghatam: "+self.ghatam_entry.get(), font_color, font=font)
                 current_y += 40
@@ -716,8 +724,18 @@ class KutcheriSplitterGUI:
                 draw_bg.text((300,current_y), "Other Artist: "+self.other_artist_entry.get(), font_color, font=font)
                 current_y += 40    
             
-            blank_bg.save(music_folder+'/'+album_title+'/'+track.get_title()+'.png')
-               
+            blank_bg.save(music_folder+'/'+album_title+'/images/'+track.get_title()+'.png')
+
+        #generate videos
+        print("Generating video clips")
+        for track in self.tracks:
+            audio_path = music_folder+'/'+album_title+'/audio/'+track.get_filename()
+            image_path = music_folder+'/'+album_title+'/images/'+track.get_title()+'.png'
+            video_path = music_folder+'/'+album_title+'/video/'+track.get_title()+'.avi'
+            subprocess.run("ffmpeg -loop 1 -y -i \"{}\" -i \"{}\" -acodec copy -vcodec libx264 -shortest -preset ultrafast \"{}\"".format(image_path, audio_path, video_path), shell=True,
+                           stdout=subprocess.PIPE)
+            print('Processed video file: '+video_path)
+                           
         #Write to google docs
         if self.client is not None:
             print("Writing to Google Docs")
@@ -741,10 +759,12 @@ class KutcheriSplitterGUI:
 
 def flatten_list(l):
     return [item for sublist in l for item in sublist] 
-    
-root = Tk()
-my_gui = KutcheriSplitterGUI(root)
-root.after(100,my_gui.update)
-root.mainloop()
+
+if __name__ == "__main__":
+    root = Tk()
+    root.state('zoomed')
+    my_gui = KutcheriSplitterGUI(root)
+    root.after(100,my_gui.update)
+    root.mainloop()
 
     

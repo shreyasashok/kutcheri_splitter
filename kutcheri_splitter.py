@@ -156,7 +156,7 @@ class Track:
         self.niraval_var.set(save_string_split[8])
         self.swaram_var.set(save_string_split[9])
         self.track_comments.delete(0,END)
-        self.track_comments.insert(0,save_string_split[10])
+        self.track_comments.insert(0,save_string_split[10].strip())
             
 class KutcheriSplitterGUI:
     def __init__(self, master):
@@ -527,7 +527,7 @@ class KutcheriSplitterGUI:
         with open(filename, "w") as save_file:
             save_file.write(self.file_browse_entry.get().strip()+'|'+self.main_artist_entry.get().strip()+'|'+self.violin_entry.get().strip()+'|'+self.mridangam_entry.get().strip()+'|'+self.ghatam_entry.get().strip()+'|'+
                             self.kanjira_entry.get().strip()+'|'+self.morsing_entry.get().strip()+'|'+self.vocal_support_entry.get().strip()+'|'+self.other_artist_entry.get().strip()+'|'+self.audio_quality_combobox.get().strip()+'|'+
-                            self.sabha_entry.get().strip()+'|'+self.location_entry.get().strip()+'|'+self.year_combobox.get().strip()+'|'+self.month_combobox.get().strip()+'|'+self.day_combobox.get().strip())
+                            self.sabha_entry.get().strip()+'|'+self.location_entry.get().strip()+'|'+self.year_combobox.get().strip()+'|'+self.month_combobox.get().strip()+'|'+self.day_combobox.get().strip()+'\n')
             for track in self.tracks:
                 save_file.write(track.get_save_string())
                 
@@ -729,7 +729,7 @@ class KutcheriSplitterGUI:
                 draw_bg.text((300,current_y), "Violinist: "+self.violin_entry.get(), font_color, font=font)
                 current_y += 40
             if self.mridangam_entry.get():
-                draw_bg.text((300,450), "Mridangist: "+self.mridangam_entry.get(), font_color, font=font)
+                draw_bg.text((300,current_y), "Mridangist: "+self.mridangam_entry.get(), font_color, font=font)
                 current_y += 40
             if self.ghatam_entry.get():
                 draw_bg.text((300,current_y), "Ghatam: "+self.ghatam_entry.get(), font_color, font=font)

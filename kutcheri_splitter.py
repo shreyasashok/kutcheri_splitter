@@ -293,7 +293,7 @@ class KutcheriSplitterGUI:
         self.day_combobox.grid(row=0, column=4, pady=(4,1), padx=5)
 
         self.controls_frame = Frame(self.kutcheri_details)
-        self.controls_frame.grid(row=29, column=0, sticky=W, pady=15, padx=2)
+        self.controls_frame.grid(row=29, column=0, columnspan=7, sticky=W, pady=15, padx=2)
         
         self.save_button = Button(self.controls_frame, text="Save", command=self.save)
         self.save_button.grid(row=0, column=0, padx=5)
@@ -303,7 +303,9 @@ class KutcheriSplitterGUI:
 
         self.generate_button = Button(self.controls_frame, text="Generate", command=self.generate)
         self.generate_button.grid(row=0, column=2, padx=5)
-        
+
+        self.batch_button = Button(self.controls_frame, text="Batch", command=self.batch)
+        self.batch_button.grid(row=0, column=3, padx=5)
 
         self.track_details = Frame(master, relief=GROOVE)
         self.track_details.pack(side=LEFT, padx=(20,5), pady=5, fill=BOTH)
@@ -532,11 +534,17 @@ class KutcheriSplitterGUI:
                 save_file.write(track.get_save_string())
                 
 
-    def load(self):
-        print("Opening file browser")
-        filename = filedialog.askopenfilename(initialdir = "~", title = "Open save file", defaultextension=".split", filetypes=[("Split files", "*.split")])
-        filename = os.path.normcase(filename)
+    def load(self, filename_param=""):
+        filename = ""
+        if not filename_param:
+            print("Opening file browser")
+            filename = filedialog.askopenfilename(initialdir = "~", title = "Open save file", defaultextension=".split", filetypes=[("Split files", "*.split")])
+            filename = os.path.normcase(filename)
+        else:
+            print("Filename provided")
+            filename = filename_param
         if not filename:
+            print("Error: no filename")
             return
 
         while (len(self.tracks) > 1):
@@ -633,7 +641,7 @@ class KutcheriSplitterGUI:
             print("ConnectionResetError")
             return -1
 
-    def generate(self):
+    def generate(self, blind_mode=False):
         print('Generating the files...')
         self.set_status('Generating...(takes a while)')
         all_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get()]))
@@ -823,10 +831,29 @@ class KutcheriSplitterGUI:
                 songs_staging_sheet.insert_rows(1, values=track_csv_data)
 
             print("Done generating!")
-            messagebox.showinfo("Kutcheri Splitter", "Generation Complete!")
+            if not blind_mode:
+                messagebox.showinfo("Kutcheri Splitter", "Generation Complete!")
+            else:
+                print("Blind mode, will not show dialog")
         else:
             print('Google credentials don''t seem to be loaded. Will not write to Google Docs.')
-                               
+
+    def batch(self):
+        folder = filedialog.askdirectory(initialdir = "~", title = "Select batch folder")
+        if not folder:
+            print("No folder given")
+            return;
+
+        for file in os.listdir(folder):
+            if file.endswith(".split"):
+                split_file_path = os.path.join(folder, file)
+                print("Current split file: "+split_file_path)
+                print("Loading split file")
+                self.load(filename_param=split_file_path)
+                print("Starting generation")
+                self.generate(blind_mode=True)
+                
+                                   
 
 def flatten_list(l):
     return [item for sublist in l for item in sublist] 

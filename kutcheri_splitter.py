@@ -595,7 +595,6 @@ class KutcheriSplitterGUI:
             
         
     def update(self):
-        print("Update")
         if (self.has_loaded_autocompletes == False):
             self.load_google_credentials()
             self.load_autocompletes()
@@ -643,10 +642,13 @@ class KutcheriSplitterGUI:
 
     def generate(self, blind_mode=False):
         print('Generating the files...')
+        print('Starting at time: ')
+        print(datetime.datetime.now())
         self.set_status('Generating...(takes a while)')
         all_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get(), self.ghatam_entry.get(), self.kanjira_entry.get(), self.morsing_entry.get(), self.vocal_support_entry.get(), self.other_artist_entry.get()]))
         main_artists_name = ', '.join(filter(None,[self.main_artist_entry.get(), self.violin_entry.get(), self.mridangam_entry.get()]))
-        album_date = self.year_combobox.get()+'-'+self.month_combobox.get()+'-'+self.day_combobox.get()
+        #album_date = self.year_combobox.get()+'-'+self.month_combobox.get()+'-'+self.day_combobox.get()
+        album_date = '-'.join(filter(None, [self.year_combobox.get(), self.month_combobox.get(), self.day_combobox.get()])) #accounts for partial dates
         upload_date = datetime.datetime.now().strftime("%Y-%m-%d")
         album_title = main_artists_name+' - '+', '.join(filter(None,[self.sabha_entry.get(), self.location_entry.get()]))+' - '+album_date
         year = self.year_combobox.get()
@@ -837,6 +839,9 @@ class KutcheriSplitterGUI:
                 print("Blind mode, will not show dialog")
         else:
             print('Google credentials don''t seem to be loaded. Will not write to Google Docs.')
+
+        print('Finished track at time: ')
+        print(datetime.datetime.now())
 
     def batch(self):
         folder = filedialog.askdirectory(initialdir = "~", title = "Select batch folder")

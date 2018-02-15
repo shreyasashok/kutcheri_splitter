@@ -34,6 +34,8 @@ class AutocompleteEntry(tkinter.Entry):
                 self._hit_index = 0
                 self.position = 0
                 self.bind('<KeyRelease>', self.handle_keyrelease)
+                self.entered_text = ''
+                self.reset_entered_text = False
 
         def autocomplete(self, delta=0):
                 """autocomplete the Entry, delta may be 0/1/-1 to cycle through possible hits"""
@@ -59,19 +61,21 @@ class AutocompleteEntry(tkinter.Entry):
                         self._hit_index = (self._hit_index + delta) % len(self._hits)
                 # now finally perform the auto completion
                 if self._hits:
-                          self.delete(0,tkinter.END)
-                          self.insert(0,self._hits[self._hit_index])
-                          #print(self.position)
-                          #time.sleep(2)
-                          self.select_range(self.position,tkinter.END)
-                          #time.sleep(2)
-                          #print(self.position)
-                          #print(str(self.selection_present()))
-                          #print(self.position)
+                        self.entered_text += self.get()[self.position-1:self.position]
+                        self.delete(0,tkinter.END)
+                        self.insert(0,self._hits[self._hit_index])
+                        self.select_range(self.position,tkinter.END)
+                        self.reset_entered_text = False
+                elif not self.reset_entered_text:
+                        self.delete(0, self.position-1)
+                        self.insert(0, self.entered_text)
+                        self.entered_text = ''
+                        self.reset_entered_text = True
 
         def handle_keyrelease(self, event):
                 """event handler for the keyrelease event on this widget"""
-##                if event.keysym == "BackSpace":
+                if event.keysym == "BackSpace":
+                        self.entered_text = self.get()
 ##                        self.delete(self.index(tkinter.INSERT), tkinter.END)
 ##                        self.position = self.index(tkinter.END)
                 if event.keysym == "Left":
@@ -100,6 +104,8 @@ class AutocompleteCombobox(tkinter.ttk.Combobox):
                 self.position = 0
                 self.bind('<KeyRelease>', self.handle_keyrelease)
                 self['values'] = self._completion_list  # Setup our popup menu
+                self.entered_text = ''
+                self.reset_entered_text = False
 
         def autocomplete(self, delta=0):
                 """autocomplete the Combobox, delta may be 0/1/-1 to cycle through possible hits"""
@@ -124,13 +130,22 @@ class AutocompleteCombobox(tkinter.ttk.Combobox):
                         self._hit_index = (self._hit_index + delta) % len(self._hits)
                 # now finally perform the auto completion
                 if self._hits:
+                        self.entered_text += self.get()[self.position-1:self.position]
                         self.delete(0,tkinter.END)
                         self.insert(0,self._hits[self._hit_index])
                         self.select_range(self.position,tkinter.END)
+                        self.reset_entered_text = False
+                elif not self.reset_entered_text:
+                        self.delete(0, self.position-1)
+                        self.insert(0, self.entered_text)
+                        self.entered_text = ''
+                        self.reset_entered_text = True
+                        
 
         def handle_keyrelease(self, event):
                 """event handler for the keyrelease event on this widget"""
-##                if event.keysym == "BackSpace":
+                if event.keysym == "BackSpace":
+                        self.entered_text = self.get()
 ##                        self.delete(self.index(tkinter.INSERT), tkinter.END)
 ##                        self.position = self.index(tkinter.END)
                 if event.keysym == "Left":

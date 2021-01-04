@@ -4,7 +4,8 @@ Python utility to split Carnatic kutcheris into separate MP3 files.
 
 **Installation:**
 
-python -m pip install gspread oauth2client
+python -m pip install pygsheets oauth2client pillow pydub selenium\_firefox
+
 Then put the files in a convenient place.
 
 **Run:**

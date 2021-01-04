@@ -1,2 +1,5 @@
 *~
 __pycache__/*
+geckodriver.log
+youtube.com.pkl
+youtube_uploader_selenium/__pycache__/*

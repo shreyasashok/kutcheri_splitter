@@ -14,6 +14,8 @@ from PIL import ImageFont
 from PIL import ImageDraw
 import subprocess
 import datetime
+from youtube_uploader_selenium import YouTubeUploader
+import json
 
 class Track:
     def __init__(self, master, autocomplete_dict, track_number):
@@ -670,6 +672,7 @@ class KutcheriSplitterGUI:
 
         os.makedirs(music_folder+'/'+album_title, exist_ok=True)
         os.makedirs(music_folder+'/'+album_title+'/audio', exist_ok=True)
+        os.makedirs(music_folder+'/'+album_title+'/audio/'+album_title, exist_ok=True)
         os.makedirs(music_folder+'/'+album_title+'/video', exist_ok=True)
         os.makedirs(music_folder+'/'+album_title+'/images', exist_ok=True)
         os.makedirs(music_folder+'/'+album_title+'/descriptions', exist_ok=True)
@@ -722,7 +725,7 @@ class KutcheriSplitterGUI:
             track_start = int(track.get_start()*1000)
             track_end = int(track.get_end()*1000)
             track_file = input_file[track_start:track_end]
-            track_file.export(music_folder+'/'+album_title+'/audio/'+track.get_filename(), format='mp3', tags={'title':track.get_title(),'album':album_title, 'artist':all_artists_name, 'year':year, 'genre':'Carnatic'}, parameters=['-write_xing', '0'])
+            track_file.export(music_folder+'/'+album_title+'/audio/'+album_title+'/'+track.get_filename(), format='mp3', tags={'title':track.get_title(),'album':album_title, 'artist':all_artists_name, 'year':year, 'genre':'Carnatic', 'track':track.track_number}, parameters=['-write_xing', '0'])
 
         #generate YouTube background
         print("Generating YouTube background")
@@ -762,7 +765,7 @@ class KutcheriSplitterGUI:
         #generate videos
         print("Generating video clips")
         for track in self.tracks:
-            audio_path = music_folder+'/'+album_title+'/audio/'+track.get_filename()
+            audio_path = music_folder+'/'+album_title+'/audio/'+album_title+'/'+track.get_filename()
             image_path = music_folder+'/'+album_title+'/images/'+track.get_title()+'.png'
             video_path = music_folder+'/'+album_title+'/video/'+track.get_title()+'.avi'
             subprocess.run("ffmpeg -loop 1 -y -i \"{}\" -i \"{}\" -acodec copy -vcodec libx264 -shortest -preset ultrafast \"{}\"".format(image_path, audio_path, video_path), shell=True,
@@ -771,7 +774,7 @@ class KutcheriSplitterGUI:
 
         #upload to YouTube
         print("Uploading to youtube")
-        youtube_upload_location = "C:/Users/shrey/youtube-upload-master/bin/youtube-upload"
+        #youtube_upload_location = "C:/Users/Shreyas Ashok/youtube-upload-master/bin/youtube-upload"
         for track in self.tracks:
             video_path = music_folder+'/'+album_title+'/video/'+track.get_title()+'.avi'
             title = track.get_title()+' - '+main_artists_name
@@ -800,17 +803,34 @@ class KutcheriSplitterGUI:
             description_file_path = music_folder+'/'+album_title+'/descriptions/'+track.get_title()+'.txt'
             with open(description_file_path, mode='w') as description_file:
                 description_file.write(description)
+
+            video_metadata_dict = dict()
+            if len(title) > 100:
+                video_metadata_dict['title'] = title[:100]
+            else:
+                video_metadata_dict['title'] = title
+            video_metadata_dict['description'] = description
+            video_metadata_dict['sharing'] = 'unlisted'
+    
+            metadata_json_file_path = music_folder+'/'+album_title+'/descriptions/'+track.get_title()+'.json'
+            with open(metadata_json_file_path, mode='w') as metadata_json_file:
+                json.dump(video_metadata_dict, metadata_json_file)
             
             print("Title:")
             print(title)
             print("Description:")
             print(description)
             print("Beginning upload...")
-            command = youtube_upload_location+" --title=\""+title+"\" --description-file=\""+description_file_path+"\" --category=\"Music\" --privacy=\"unlisted\" \""+video_path+"\""
-            print("Command: "+command)
-            result = subprocess.run(command, shell=True, stdout=subprocess.PIPE)
+            #command = youtube_upload_location+" --title=\""+title+"\" --description-file=\""+description_file_path+"\" --category=\"Music\" --privacy=\"unlisted\" \""+video_path+"\""
+            #print("Command: "+command)
+            #result = subprocess.run(command, shell=True, stdout=subprocess.PIPE)
+            uploader = YouTubeUploader(video_path, metadata_json_file_path)
+            was_video_uploaded, video_id = uploader.upload();
+            if not was_video_uploaded:
+                print("Error uploading.")
+            
             print("Upload finished!")
-            video_id = result.stdout.split()[-1].decode('ASCII')
+            
             print("Video ID: "+str(video_id))
             track.youtube_id = video_id            
                            
